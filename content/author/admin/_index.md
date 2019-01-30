@@ -1,45 +1,42 @@
 +++
 # Display name
-name = "Nelson Bighetti"
+name = "Varun Subramanya Rao"
 
 # Is this the primary user of the site?
 superuser = true
 
 # Role/position
-role = "Professor of Artificial Intelligence"
+role = "Software Developer"
 
 # Organizations/Affiliations
 #   Separate multiple entries with a comma, using the form: `[ {name="Org1", url=""}, {name="Org2", url=""} ]`.
-organizations = [ { name = "Stanford University", url = "" } ]
+organizations = []
 
 # Short bio (displayed in user profile at end of posts)
-bio = "My research interests include distributed robotics, mobile computing and programmable matter."
+bio = ""
 
 # Enter email to display Gravatar (if Gravatar enabled in Config)
-email = ""
+email = "varun.rao@mavs.uta.edu"
 
 # List (academic) interests or hobbies
 interests = [
   "Artificial Intelligence",
-  "Computational Linguistics",
-  "Information Retrieval"
+  "Database Management Systems",
+  "Software Engineering"
 ]
 
 # List qualifications (such as academic degrees)
 [[education.courses]]
-  course = "PhD in Artificial Intelligence"
-  institution = "Stanford University"
-  year = 2012
+  course = "M.S in Computer Science"
+  institution = "University of Texas at Arlington, Arlington, Texas, U.S.A"
+  year = 2019
 
 [[education.courses]]
-  course = "MEng in Artificial Intelligence"
-  institution = "Massachusetts Institute of Technology"
-  year = 2009
+  course = "B.E in Computer Science"
+  institution = "Dayananda Sagar College of Engineering, Bengaluru, Karanataka, India "
+  year = 2016
 
-[[education.courses]]
-  course = "BSc in Artificial Intelligence"
-  institution = "Massachusetts Institute of Technology"
-  year = 2008
+
 
 # Social/Academic Networking
 #
@@ -62,32 +59,34 @@ interests = [
 [[social]]
   icon = "envelope"
   icon_pack = "fas"
-  link = "#contact"  # For a direct email link, use "mailto:test@example.org".
+  link = "mailto:varun.rao@mavs.uta.edu"  # For a direct email link, use "mailto:test@example.org".
 
 [[social]]
-  icon = "twitter"
+  icon = "linkedin-in"
   icon_pack = "fab"
-  link = "https://twitter.com/GeorgeCushen"
-
-[[social]]
-  icon = "google-scholar"
-  icon_pack = "ai"
-  link = "https://scholar.google.co.uk/citations?user=sIwtMXoAAAAJ"
+  link = "https://www.linkedin.com/in/varun-s-rao-105435106/"
 
 [[social]]
   icon = "github"
   icon_pack = "fab"
-  link = "https://github.com/gcushen"
+  link = "https://github.com/Rao-Varun/varun_repo"
 
 # Link to a PDF of your resume/CV from the About widget.
 # To enable, copy your resume/CV to `static/files/cv.pdf` and uncomment the lines below.
-# [[social]]
-#   icon = "cv"
-#   icon_pack = "ai"
-#   link = "files/cv.pdf"
+ [[social]]
+   icon = "cv"
+   icon_pack = "ai"
+   link = "files/Varun_S_Rao_resume_2019.pdf"
 
 +++
 
-Nelson Bighetti is a professor of artificial intelligence at the Stanford AI Lab. His research interests include distributed robotics, mobile computing and programmable matter. He leads the Robotic Neurobiology group, which develops self-reconfiguring robots, systems of self-organizing robots, and mobile sensor networks.
+I am a Software Developer with a lot of love for coding. I have an experience of 2 years in the Software Industry but I have been learning and coding for a very long time.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed neque elit, tristique placerat feugiat ac, facilisis vitae arcu. Proin eget egestas augue. Praesent ut sem nec arcu pellentesque aliquet. Duis dapibus diam vel metus tempus vulputate. 
+My preferred language is Python but I can code in other language as well. Recently I have found interest in full stack development. 
+
+My experience in industry level programming was in NOKIA. I learnt how to write codes that can automate manual tasks required to operate any DUT(Device under test), 
+traffic analyzers, traffic impairment, IPSec decryptions, packet generation, tasks related to transport component of BTS tower. Here I was appreciated for the solutions I offered, keeping my codes clean and keeping it up to the industry standard. 
+
+I have a Bachelors of Engineering degree in Computer Science and I am currently pursuing my Masters in the same field.
+
+Apart from my technical skills, I am friendly and an extrovert. I like to talk to new people and get to know about them. I am into fitness, video games and I am also part of Toastmasters. 
