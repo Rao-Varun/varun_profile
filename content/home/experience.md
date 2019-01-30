@@ -19,27 +19,38 @@ date_format = "January 2006"
 #   Leave `date_end` empty if it's your current employer.
 #   Begin/end multi-line descriptions with 3 quotes `"""`.
 [[experience]]
-  title = "CEO"
-  company = "GenCoin"
+  title = "R&D Engineer"
+  company = "Nokia"
   company_url = ""
-  location = "California"
-  date_start = "2017-01-01"
-  date_end = ""
-  description = """
+  location = "Bangalore"
+  date_start = "2016-08-11"
+  date_end = "2018-07-29"
+  description = """Built solutions to automate manual tasks required to operate
+DUT(Device under test), android phones, network related
+devices, and tasks related to transport component of BTS tower.
   Responsibilities include:
+ 
+  * Contributed to multiple frameworks related to test automation
+using ROBOT frameworks.
+
+  * Worked on automating the configuration web page which was
+used to authenticate, configure, and manage Nokia telecommunication
+devices using python-selenium.
+
+  * Worked on building a client-server based packet generator using
+python’s library SCAPY.
+
+  * Wrote python script to generate TWAMP application layer protocol
+packet
+
+  * Automated android mobile operations using ADB and python.
   
-  * Analysing
-  * Modelling
-  * Deploying
+  * Wrote parsers in python to scan for ROBOT Framework variables in
+text, json, xml files and replace them with with their respective values.
+
+  * Python script to extract details from network packets and analyse
+them.
   """
 
-[[experience]]
-  title = "Professor"
-  company = "University X"
-  company_url = ""
-  location = "California"
-  date_start = "2016-01-01"
-  date_end = "2016-12-31"
-  description = """Taught electronic engineering and researched semiconductor physics."""
 
 +++
