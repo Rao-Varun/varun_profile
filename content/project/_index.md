@@ -1,6 +1,6 @@
 +++
 
-title="projects"
+title="Projects"
 
 [header]
 image = ""
