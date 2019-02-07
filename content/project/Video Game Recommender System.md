@@ -3,36 +3,35 @@
 title = "Video game recommender"
 
 +++
-1 INTRODUCTION
+##**1 INTRODUCTION**
 A video game recommending website that takes 3-5 users favorite games as its input and suggests a list of games that user might be interested in.
 
 
-2 FEATURES
+##**2 FEATURES**
 The recommender system suggests game based on the following attributes of users favorite games:
   1. platform the game runs on.
   2. genre of the game.
   3. ratings of the game.
   4. sales of the game in the country in which user resides in.
   5. publisher.
-  6. year of release.
-  7. Age restriction
+The prototype for the recommender app can be found here[I'm a link](https://www.google.com)
 The video game recommender system can be useful in e-commerce website that sells video games
 The recommender system can also be used in the websites such as ones that contain forums related
 to video games
 
-3 STATE OF THE ART
+##**3 STATE OF THE ART**
 A similar recommender system built by Quantic Foundry suggests games to user by taking user’s 3
 favorite games as its inputs.
 
 The recommender system is used in websites such as amazon, bestbuy, gamestop, ign etc
 suggests games based on users searches.
 
-4 DATA & TECHNICAL REQUIREMENTS
+##**4 DATA & TECHNICAL REQUIREMENTS**
 The dataset for the recommender systems exists in kagle. The data set contains the above mentioned
 required attributes
 
 
-5 WEBSITE DESIGN
+##**5 WEBSITE DESIGN**
 ![Video game recommender input page](/img/recommender_input.png)
 ![Video game recommender result page](/img/recommender_result.png)
 
