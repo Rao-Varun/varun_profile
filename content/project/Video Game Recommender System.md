@@ -36,7 +36,7 @@ required attributes
 ![Splash screen](/img/splash.png)
 ![Homes screen](/img/homescreen.png)
 ![Output screen](/img/output.png)
-![Game detail screen](/img/gamedetail.png)
+![Game detail screen](/img/game_detail.png)
 
 
 
