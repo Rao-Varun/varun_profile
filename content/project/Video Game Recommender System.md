@@ -33,9 +33,10 @@ required attributes
 
 
 ## **5 WEBSITE DESIGN**
-![Video game recommender input page](/img/recommender_input.png)
-![Video game recommender result page](/img/recommender_result.png)
-
+![Splash screen](/img/splash.png)
+![Homes screen](/img/homescreen.png)
+![Output screen](/img/output.png)
+![Game detail screen](/img/gamedetail.png)
 
 
 
