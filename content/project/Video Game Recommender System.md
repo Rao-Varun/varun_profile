@@ -32,7 +32,7 @@ The dataset for the recommender system is taken from [here](http://jmcauley.ucsd
 required attributes
 
 
-## **5 WEBSITE DESIGN**
+## **5 APP DESIGN**
 ![Splash screen](/img/splash.png)
 ![Homes screen](/img/homescreen.png)
 ![Output screen](/img/output.png)
