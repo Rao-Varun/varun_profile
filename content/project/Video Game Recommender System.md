@@ -9,12 +9,14 @@ A video game recommending website that takes 3-5 users favorite games as its inp
 
 ## **2 FEATURES**
 The recommender system suggests game based on the following attributes of users favorite games:
+
   1. platform the game runs on.
   2. genre of the game.
   3. ratings of the game.
   4. sales of the game in the country in which user resides in.
   5. publisher.
-The prototype for the recommender app can be found here[I'm a link](https://www.google.com)
+  
+The prototype for the recommender app can be found [here](https://marvelapp.com/6bh58h5)
 The video game recommender system can be useful in e-commerce website that sells video games
 The recommender system can also be used in the websites such as ones that contain forums related
 to video games
