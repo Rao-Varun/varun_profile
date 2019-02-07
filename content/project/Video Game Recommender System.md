@@ -3,11 +3,11 @@
 title = "Video game recommender"
 
 +++
-## **1 INTRODUCTION**
+### **1 INTRODUCTION**
 A video game recommending systems that takes users favorite games as its input, provides detailsof that game and suggests a list of games that user might be interested in.
 
 
-## **2 FEATURES**
+### **2 FEATURES**
 The recommender system suggests game based on the following attributes of users favorite games:
 
   1. platform the game runs on.
@@ -21,18 +21,18 @@ The video game recommender system can be useful in e-commerce website that sells
 The recommender system can also be used in the websites such as ones that contain forums related
 to video games
 
-## **3 STATE OF THE ART**
+### **3 STATE OF THE ART**
 A similar recommender system built by [Quantic Foundry](https://apps.quanticfoundry.com/recommendations/gamerprofile/videogame/) suggests games to user by taking user’s 3 favorite games as its inputs.
 
 The recommender system is used in websites such as amazon, bestbuy, gamestop, ign etc
 suggests games based on users searches.
 
-## **4 DATA & TECHNICAL REQUIREMENTS**
+### **4 DATA & TECHNICAL REQUIREMENTS**
 The dataset for the recommender system is taken from [here](http://jmcauley.ucsd.edu/data/amazon/links.html). The data set contains the above mentioned
 required attributes
 
 
-## **5 APP DESIGN**
+### **5 APP DESIGN**
 ![Splash screen](/img/splash.png)
 ![Homes screen](/img/homescreen.png)
 ![Output screen](/img/output.png)
