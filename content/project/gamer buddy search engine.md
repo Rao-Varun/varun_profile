@@ -30,6 +30,7 @@ To build a search engine, the following aspects need to be implemented.
 
 ### **DEPLOYING SEARCH ENGINE**
 Search engine can deployed using flask and [ngok](https://ngrok.com/).
+An implemented search engine is available [here](http://8f226999.ngrok.io)
 
 
 
