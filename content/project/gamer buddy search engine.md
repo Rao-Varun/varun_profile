@@ -3,11 +3,11 @@
 title = "GamerBuddy Search Engine"
 
 +++
-### **1 INTRODUCTION**
+## **1 INTRODUCTION**
 So we are gonna build a video game search engines that takes query string from user and provides a list of games that are related to the query. I named mine as GamerBuddy.
 
 
-### **2 FEATURES**
+## **2 FEATURES**
 
 The Search Engine system gives a list of games based on the following attributes of users favorite games:
 
@@ -17,12 +17,12 @@ The Search Engine system gives a list of games based on the following attributes
   
 So that means your datasets must contain the above mentioned attributes and the queries are matched with the strings present in the above mentioned attributes of the dataset. The datasets that is used by the search engine is available [here](http://jmcauley.ucsd.edu/data/amazon/links.html). Both video game meta data and video game reviews are used for building our search engine GamerBuddy. Make sure you turn the files in the string to list of jsons.  
 
-### **3 IMPLEMENTATION**
+## **3 IMPLEMENTATION**
 
 The data set contains set of json string. Each json string in meta data represents a product and a json in review file represents a review of a product in meta file.
 To build a search engine, the following aspects need to be implemented.
   
-  1. Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
+### Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
      Turn the .zip files into list of json string using following code. Each json string contains details of a product(meta file) or its review(review file).
   ```python
   
@@ -87,7 +87,7 @@ To build a search engine, the following aspects need to be implemented.
   
   ```
   
-  2. Building a dictionary containing [inverted index](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py).
+###  Building a dictionary containing [inverted index](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py).
   
   So we use the datastructure [inverted index](https://en.wikipedia.org/wiki/Inverted_index). Inverted index for our document is of the following structure:
   ```python   
@@ -150,14 +150,16 @@ To build a search engine, the following aspects need to be implemented.
         
   ```
   
+  Now to 
   
-  3. Building [tf-idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
-  4. Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
-  5. Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
+  
+### Building [tf-idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
+### Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
+### Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
 
 
 
-### **DEPLOYING SEARCH ENGINE**
+## **DEPLOYING SEARCH ENGINE**
 Search engine can deployed using flask and [ngok](https://ngrok.com/).
 An implemented search engine is available [here](http://8f226999.ngrok.io)
 
