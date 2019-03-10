@@ -22,7 +22,7 @@ So that means your datasets must contain the above mentioned attributes and the 
 The data set contains set of json string. Each json string in meta data represents a product and a json in review file represents a review of a product in meta file.
 To build a search engine, the following aspects need to be implemented.
   
-### Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
+### a. Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
      Turn the .zip files into list of json string using following code. Each json string contains details of a product(meta file) or its review(review file).
   ```python
   
@@ -87,7 +87,7 @@ To build a search engine, the following aspects need to be implemented.
   
   ```
   
-###  Building a dictionary containing [inverted index](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py).
+###  b. Building a dictionary containing [inverted index](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py).
   
   So we use the datastructure [inverted index](https://en.wikipedia.org/wiki/Inverted_index). Inverted index for our document is of the following structure:
   ```python   
@@ -153,9 +153,9 @@ To build a search engine, the following aspects need to be implemented.
   Now to 
   
   
-### Building [tf-idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
-### Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
-### Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
+### c. Building [tf-idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
+### d. Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
+### e. Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
 
 
 
