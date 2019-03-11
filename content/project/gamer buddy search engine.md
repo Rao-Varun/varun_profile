@@ -46,18 +46,35 @@ To build a search engine, the following aspects need to be implemented.
     f.close()
 
   ```    
-  The list of jsons in meta file will next be converted into 
+  The list of jsons in meta file will next be converted into json of format shown below.
   
   ```python
+  # product_details
   
   { 
-  "asin1": { "description": "value", "title": "value", "imUrl": "value",...},
-  "asin2": { "description": "value", "title": "value", "imUrl": "value",...},
-  ....}
+  "asin1": { "description": "value",
+             "title": "value",
+             "imUrl": "value",
+             .
+             .
+             .},
+  "asin2": { "description": "value",
+              "title": "value",
+              "imUrl": "value",
+              .
+              .
+              .},
+    .
+    .
+    .
+  }
   
   ```
+  The above json can be converted to dictionary of the same form by using json.dumps(). 
   The list of jsons in review file will be converted into
   ```python
+  # product_reviews
+  
   {
   "asin1" : {
             { "reviewerId" : "value", "reviewText": "value", ...},
@@ -149,6 +166,7 @@ The basic idea of search engine is to see which document consists all the terms 
   To build the generate a list for each product("asin") we execute the following code.
   
   ```python
+  
   from nltk.corpus import stopwords
   from nltk.tokenize import word_tokenize
   
@@ -211,9 +229,8 @@ The basic idea of search engine is to see which document consists all the terms 
   ```
   
   
-### c. Building [tf-idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
+### c. Building [tf idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
 
-tf-idf is the pproduct of Term Frequency(tf) and inverse document frequency(idf).
 
 **Term frequency** of a term in a document is the ratio of number of times the term occur in that document to the total number of terms in the document. 
 
@@ -223,6 +240,42 @@ tf-idf is the pproduct of Term Frequency(tf) and inverse document frequency(idf)
 
 Consider a document with terms [versatile, profit, leaf, loss, stock]. tf of profit in the document is 1/5 ie 0.2 .
 
+The code for calculating tf is given below
+
+```python
+    
+    term_tf = {}
+    product_length = {}
+    product_details = {dictionary containing all the product details obatained from json, which was calculated in the first step a }
+    inverse_index = { dictionary containing all terms and its positions in documents. Obtained from step b}
+    
+    def generate_tf_for_terms_in_all_products():
+        for term in inverse_index:
+            term_tf[term] = dict()
+            for product in inverse_index[term]:
+                term_count = get_term_count_in_a_product(term, product)
+                all_term_count = get_all_term_count_in_product(product)
+                generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count)
+
+    def get_term_count_in_a_product(term, product):
+        inv_ind_dict = inverse_index[term][product]
+        term_count = sum([len(inv_ind_dict[key]) for key in inv_ind_dict])
+        return term_count
+
+    def get_all_term_count_in_product(product):
+        if product in product_length:
+            return product_length[product]
+        product_details = product_details[product]
+        result = sum([len(product_details[key]) for key in product_details])
+        product_length[product] = result
+        return result
+
+    def generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count):
+        term_tf[term][product] = float(term_count) / float(all_term_count)
+
+
+```
+
 **Inverse document frequency** of a term is the importance of a term in the entire document collection. Inverse document frequency is calculated in the following way
 
 ```python
@@ -230,8 +283,22 @@ Consider a document with terms [versatile, profit, leaf, loss, stock]. tf of pro
           inverse docuemt frequency of term t = 1 + log(total number of documents in the collection / number of documents that have t)
 
 ```
+The following code can be executed to obtained idf
 
-tf-idf  is the product of tf and idf 
+```python
+
+term_idf = {}
+
+def generate_idf_for_terms():
+        total_len = len(inverse_index)
+        for term in inverse_index:
+            term_document_count = len(inverse_index[term].keys())
+            term_idf[term] = 1 + log(self.total_number_of_product / float(term_document_count))
+
+```
+
+
+We calculate tf and idf for tf-idf. tf-idf is the product of Term Frequency(tf) and inverse document frequency(idf). We will discuss this later in generating cosine product.
 
 ```python
 
@@ -242,6 +309,54 @@ tf-idf  is the product of tf and idf
 
 
 ### d. Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
+
+Processing queries basically means to find the document that contain all the terms which are present in the queries. 
+So we first find list of documents for each term that contain it and then we will find all the documents that are common for all the terms.
+
+The implementation of processing query for GamerBuddy includes following step:
+  1. get all terms in in query sentence.
+  2. for each term, find all the products that contain the term.
+  3. find products that are in common for all query terms.
+  4. filter products second time based on which key[desciption, title, reviews] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
+  
+```python
+
+  #getting terms in query sentence
+  def get_query_words(self, query):
+      print("info :: splitting query sentence...")
+      return [term for term in word_tokenize(query.lower(), language="english") if
+              term not in stop_words]
+
+  #getting process  
+  def process_query(self, query):
+    query_list = get_query_words(query)
+    term_asin_list = get_asin_from_inverted_index()
+    common_asin_list = get_common_asin_products(term_asin_list)
+    return get_asin_containing_query(common_asin_list)
+
+  #get products that contain the terms in its description, title, or reviews. Each term has its own 
+  def get_asin_from_inverted_index(self):
+    term_asin_list = {}
+    for term in query_list:
+        term_asin_list[term] = inverted_index.get(term)
+    return term_asin_list
+
+
+  #filter products second time based on which key[desciption, title, reviews] the term exits. 
+  def get_common_asin_products(self, term_asin_list):
+        print("info :: getting products(asin) containing all term words...")
+        common_asin = set()
+        for term in term_asin_list:
+            if len(common_asin) == 0:
+                common_asin = set(term_asin_list[term].keys())
+            else:
+                common_asin = common_asin & set(term_asin_list[term].keys())
+        return list(common_asin)
+
+  
+
+```
+
 
 
 
