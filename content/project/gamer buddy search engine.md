@@ -362,6 +362,87 @@ The implementation of processing query for GamerBuddy includes following step:
 
 ### e. Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
 
+Consine Rank is used to rank the search result that we obtained in step d. We use [vector space model ](https://nlp.stanford.edu/IR-book/pdf/06vect.pdf). Each term in the document collections represents an axis in that vector space model and a document is represented as a vector. Each vectors have their terms as its components and the value of each component  is given by that terms tf-idf. Similarly queries are represented as vectors. The tf of a term in query sentence is given by the number of times that term occur in the sentence and for idf, we refer the same idf table we created for our document collects(product list)
+
+Cosine Ranking is computed in the following way. 
+
+  1. Normalise document vectors
+  2. Normalise query vectors
+  3. Perform dot product of both vectors(cosine value).
+  4. Sort the vectors in descending order. The higher the product value, the more relevant the document is to the query. 
+
+##### 1. Code for normalised documents vectors is given below
+
+~~~python
+    from math import sqrt
+    
+    #product_list = search result occured in step d.
+    #query_words_list = dictionary containing all the terms as keys and their respective frequency in the query sentence as their values
+
+    def generate_tf_idf_value_for_products(product_list, query_words_list):
+        product_tf_idf = self._generate_tf_idf_without_normalization(product_list, query_words_list)
+        return self._nomalise_tf_idf(product_tf_idf)
+
+    def generate_tf_idf_without_normalization(product_list, query_words_list):
+        product_tf_idf = dict()
+        for asin in product_list:
+            product_tf_idf[asin] = {}
+            for term in query_words_list:
+                tf = tf_details[term][asin]
+                idf = idf_details[term]
+                product_tf_idf[asin][term] = tf * idf
+        return product_tf_idf
+
+    def nomalise_tf_idf(product_tf_idf):
+        for product in product_tf_idf:
+            temp_product = product_tf_idf[product]
+            magnitude = sqrt(sum([temp_product[term] ** 2 for term in temp_product]))
+            for term in temp_product:
+                temp_product[term] /= magnitude
+        return product_tf_idf
+
+~~~
+
+##### 2. Code for normalised documents vectors is given below
+
+~~~python
+
+    def generate_tf_idf_value_for_query(query_words_list):
+        query_tf_idf = generate_unnormalized_tf_idf_for_query(query_words_list)
+        return normalize_tf_idf_for_query(query_tf_idf)
+
+    def generate_unnormalized_tf_idf_for_query(query_words_list):
+        query_tf_idf = dict()
+        total_len = 0
+        for term in query_words_list:
+            total_len += len(query_words_list[term])
+        for term in query_words_list:
+            tf = float(sum(query_words_list[term])) / total_len
+            idf = float(self.idf_details[term])
+            query_tf_idf[term] = tf * idf
+        return query_tf_idf
+
+    def normalize_tf_idf_for_query(query_tf_idf):
+        magnitude = sqrt(sum([query_tf_idf[term] ** 2 for term in query_tf_idf]))
+        for term in query_tf_idf:
+            query_tf_idf[term] /= magnitude
+        return query_tf_idf
+
+~~~
+
+##### 3. Code for generating dot product of documents and query
+
+~~~python
+
+    def generate_cosine_value(product_tf_idf, query_tf_idf):
+        product_rank = dict()
+        for product in product_tf_idf:
+            temp_product = product_tf_idf[product]
+            for term in query_tf_idf:
+                product_rank[product] = temp_product[term] * query_tf_idf[term]
+        return product_rank
+
+~~~
 
 
 ## **DEPLOYING SEARCH ENGINE**
