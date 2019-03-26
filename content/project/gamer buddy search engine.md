@@ -453,7 +453,7 @@ An implemented search engine is available [here](http://55b4c05d.ngrok.io).
 ## **SOURCE CODE**
 The entire source code for this can be found [here](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy). 
 
-##**REFERRENCE**
+## **REFERRENCE**
 
 [How to build a search engine](http://aakashjapi.com/fuckin-search-engines-how-do-they-work/)
 
