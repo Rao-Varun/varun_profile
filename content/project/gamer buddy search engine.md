@@ -447,7 +447,7 @@ Cosine Ranking is computed in the following way.
 
 ## **DEPLOYING SEARCH ENGINE**
 Search engine can deployed using flask and [ngok](https://ngrok.com/).
-An implemented search engine is available [here](http://8f226999.ngrok.io)
+An implemented search engine is available [here](http://55b4c05d.ngrok.io).
 
 
 
