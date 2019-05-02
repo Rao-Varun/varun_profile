@@ -13,22 +13,20 @@ The Search Engine system gives a list of games based on the following attributes
 
   1. Title.
   2. Description.
-  3. Reviews of those games.
   
-So that means your datasets must contain the above mentioned attributes and the queries are matched with the strings present in the above mentioned attributes of the dataset. The datasets that is used by the search engine is available [here](http://jmcauley.ucsd.edu/data/amazon/links.html). Both video game meta data and video game reviews are used for building our search engine GamerBuddy. Make sure you turn the files in the string to list of jsons.  
+So that means your datasets must contain the above mentioned attributes and the queries are matched with the strings present in the above mentioned attributes of the dataset. The datasets that is used by the search engine is available [here](http://jmcauley.ucsd.edu/data/amazon/links.html). Video game meta data is used for building our search engine, GamerBuddy. Make sure you turn the files in the string to list of jsons.  
 
 ## **3 IMPLEMENTATION**
 
-The data set contains set of json string. Each json string in meta data represents a product and a json in review file represents a review of a product in meta file.
+The data set contains set of json string. Each json string in meta data file represents a product.
 To build a search engine, the following aspects need to be implemented.
   
 ### a. Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
-     Turn the .zip files into list of json string using following code. Each json string contains details of a product(meta file) or its review(review file).
+     Turn the .zip files into list of json string using following code. Each json string contains details of a product.
   ```python
   
   # generate list of json strings.
   #op meta file=> [ {"asin" : "value", "title": "value" , "description": "value", "imUrl": "value"........ }, .....]
-  #op review file=>[ {"reviewText: "value", "reviewerID": "value", "asin": "value" ...}....]
   
   def parse(path):
     g = gzip.open(path, 'r')
@@ -70,34 +68,14 @@ To build a search engine, the following aspects need to be implemented.
   }
   
   ```
-  The above json can be converted to dictionary of the same form by using json.dumps(). 
-  The list of jsons in review file will be converted into
-  ```python
-  # product_reviews
   
-  {
-  "asin1" : {
-            { "reviewerId" : "value", "reviewText": "value", ...},
-            { "reviewerId" : "value", "reviewText": "value", ...},
-              .
-              .
-              .},
-  "asin2" : {
-            { "reviewerId" : "value", "reviewText": "value", ...},
-            .
-            .
-            },
-      .
-      .
-      .
-   }
-            
-  ```
+  The above json can be converted to dictionary of the same form by using json.dumps(). 
   The format change can be performed by executing the following code.
   
   ```python
   
   def split_file(file_name):
+  #file_name :: metadata file
     #for meta file
     product_dict = {}
     input_file = open(file_name+".json", "r+")
@@ -109,24 +87,6 @@ To build a search engine, the following aspects need to be implemented.
     output_file.write(json.dumps(product_dict))
     output_file.close() 
 
-  def split_file_review(file_name):
-    #for review file
-    review_dict = {}
-    input_file = open(file_name + ".json", "r+")
-    output_file = open("product_reviews.json", "w+")
-    meta_file = open("product_details.json", "r+")
-    input_json = json.loads(input_file.read())
-    meta_json = json.loads(meta_file.read())
-    products = meta_json.keys()
-    for review in input_json:
-        if review["asin"] in products:
-            if review["asin"] not in review_dict:
-                review_dict[review["asin"]] = [review]
-            else:
-                review_dict[review["asin"]].append(review)
-        del (review["asin"])
-    output_file.write(json.dumps(review_dict))
-    output_file.close()
   
   ```
   
@@ -137,8 +97,8 @@ The basic idea of search engine is to see which document consists all the terms 
 ```python   
       
       { 
-        "word1" : { "asin_value1" :{"description": [ 10, 40, 50, ...], "title": [15, 40, 52.....], "reviewerId1_value": [13, 78, 42],                                       ....},
-                    "asin_value1" :{"description": [ 10, 40, 50, ...], "title": [15, 40, 52.....], "reviewerId34_value": [13, 78,                                           42]....} "
+        "word1" : { "asin_value1" :{"description": [ 10, 40, 50, ...], "title": [15, 40, 52.....]},
+                    "asin_value1" :{"description": [ 10, 40, 50, ...], "title": [15, 40, 52.....]}, 
                   .
                   .
                   .},
@@ -175,16 +135,10 @@ The basic idea of search engine is to see which document consists all the terms 
   
   def generate_all_terms_in_metadata(metadata_dict):
         for product in metadata_dict:
-            terms_in_file[product] = get_terms_in_json(metadata_dict[product], ["title", "description"])
-  
-  def generate_all_terms_in_review_data(self, review_dict):
-        for asin in review_dict:
-            for review in review_dict[asin]:
-                terms_in_file[asin][review["reviewerID"]] = get_terms_in_json(review, ["reviewText"])[
-                    "reviewText"]
+            terms_in_file[product] = _get_terms_in_json(metadata_dict[product], ["title", "description"])
   
   
-  def get_terms_in_json(json_dict, key_list):
+  def _get_terms_in_json(json_dict, key_list):
         json_to_terms = {}
         for key in key_list:
             if key not in json_dict:
@@ -203,10 +157,10 @@ The basic idea of search engine is to see which document consists all the terms 
    
    def generate_position_of_terms_in_input_json():
         for count, asin in enumerate(terms_in_file, start=1):
-                product_term_collections[asin] = find_all_term_position_for_a_product(terms_in_file[asin])
-                update_term_positions_dictionary(asin, product_term_collections)
+                product_term_collections[asin] = _find_all_term_position_for_a_product(terms_in_file[asin])
+                _update_term_positions_dictionary(asin, product_term_collections)
                 
-   def  find_all_term_position_for_a_product(product_term_collection):
+   def  _find_all_term_position_for_a_product(product_term_collection):
         term_position = {}
         for key in product_term_collection:
             for index, term in enumerate(product_term_collection[key]):
@@ -217,7 +171,7 @@ The basic idea of search engine is to see which document consists all the terms 
                 term_position[term][key].append(index)
         return term_position 
    
-   def update_term_positions_dictionary(asin, term_collection):
+   def _update_term_positions_dictionary(asin, term_collection):
         for term in term_collection:
             if not term in term_position:
                 inverted_index[term] = {}
