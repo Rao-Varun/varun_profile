@@ -115,15 +115,21 @@ The basic idea of search engine is to see which document consists all the terms 
   ```python
       
       {
-      "asin_value": { "description": ["word1", "word2", .......], "title": ["word1", "word2", .......], "reviewid_value": ["word1", "word2", .......]},
-      "asin_value": { "description": ["word1", "word2", .......], "title": ["word1", "word2", .......], "reviewid_value": ["word1", "word2", .......]},
-      .
-      .
-      .
+      "asin_value": { 
+                      "description": ["word1", "word2", .......],
+                      "title": ["word1", "word2", .......]
+                    },
+      "asin_value": { 
+                      "description": ["word1", "word2", .......],
+                      "title": ["word1", "word2", .......]
+                    },
+          .
+          .
+          .
       }
       
   ```
-  To build the generate a list for each product("asin") we execute the following code.
+  To build the a list of terms for each product("asin") we execute the following code.
   
   ```python
   
@@ -135,21 +141,19 @@ The basic idea of search engine is to see which document consists all the terms 
   
   def generate_all_terms_in_metadata(metadata_dict):
         for product in metadata_dict:
-            terms_in_file[product] = _get_terms_in_json(metadata_dict[product], ["title", "description"])
+            terms_in_file[product] = _get_terms_in_json(metadata_dict[product])
   
   
   def _get_terms_in_json(json_dict, key_list):
         json_to_terms = {}
-        for key in key_list:
-            if key not in json_dict:
-                continue
+        for key in json_dict:
             json_to_terms[key] = [term for term in word_tokenize(json_dict[key].lower(), language="english") if
                                   term not in stop_words]
         return json_to_terms
         
   ```
   
-  Now to convert a list a terms in documents we execute the following code.
+  Now to convert a list a terms in documents to inverted index we execute the following code.
   
   ```python
    
@@ -211,12 +215,12 @@ The code for calculating tf is given below
                 all_term_count = get_all_term_count_in_product(product)
                 generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count)
 
-    def get_term_count_in_a_product(term, product):
+    def _get_term_count_in_a_product(term, product):
         inv_ind_dict = inverse_index[term][product]
         term_count = sum([len(inv_ind_dict[key]) for key in inv_ind_dict])
         return term_count
 
-    def get_all_term_count_in_product(product):
+    def _get_all_term_count_in_product(product):
         if product in product_length:
             return product_length[product]
         product_details = product_details[product]
@@ -224,13 +228,13 @@ The code for calculating tf is given below
         product_length[product] = result
         return result
 
-    def generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count):
+    def _generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count):
         term_tf[term][product] = float(term_count) / float(all_term_count)
 
 
 ```
 
-**Inverse document frequency** of a term is the importance of a term in the entire document collection. Inverse document frequency is calculated in the following way
+**Inverse document frequency** of a term gives us the importance of a term in the entire document collection. Inverse document frequency is calculated in the following way
 
 ```python
 
@@ -241,18 +245,19 @@ The following code can be executed to obtained idf
 
 ```python
 
+total_number_of_product = len(product_details) #product details, a dictionary that contains the details of all products.
 term_idf = {}
 
 def generate_idf_for_terms():
         total_len = len(inverse_index)
         for term in inverse_index:
             term_document_count = len(inverse_index[term].keys())
-            term_idf[term] = 1 + log(self.total_number_of_product / float(term_document_count))
+            term_idf[term] = 1 + log(total_number_of_product / float(term_document_count))
 
 ```
 
 
-We calculate tf and idf for tf-idf. tf-idf is the product of Term Frequency(tf) and inverse document frequency(idf). We will discuss this later in generating cosine product.
+We calculate tf and idf for tf-idf. tf-idf of a term in a document is the product of Term Frequency(tf) of that term in that document and inverse document frequency(idf). We will discuss this later in generating cosine product.
 
 ```python
 
@@ -271,7 +276,8 @@ The implementation of processing query for GamerBuddy includes following step:
   1. get all terms in in query sentence.
   2. for each term, find all the products that contain the term.
   3. find products that are in common for all query terms.
-  4. filter products second time based on which key[desciption, title, reviews] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
+  4. filter products second time based on which key[desciption, title] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
+  5. get multiplier for all the matched product based on the order of the query terms that were found in the document.
   
 ```python
 
@@ -286,9 +292,10 @@ The implementation of processing query for GamerBuddy includes following step:
     query_list = get_query_words(query)
     term_asin_list = get_asin_from_inverted_index()
     common_asin_list = get_common_asin_products(term_asin_list)
-    return get_asin_containing_query(common_asin_list)
+    asin_list = get_asin_containing_query(common_asin_list)
+    return _get_multipliers_for_those_containing_exact_query(asin_list, query)
 
-  #get products that contain the terms in its description, title, or reviews. Each term has its own 
+  #get products that contain the terms in its description or title. Each term has its own 
   def get_asin_from_inverted_index(self):
     term_asin_list = {}
     for term in query_list:
@@ -296,7 +303,7 @@ The implementation of processing query for GamerBuddy includes following step:
     return term_asin_list
 
 
-  #filter products second time based on which key[desciption, title, reviews] the term exits. 
+  #filter products second time based on which key[desciption, title] all the term exits. 
   def get_common_asin_products(self, term_asin_list):
         print("info :: getting products(asin) containing all term words...")
         common_asin = set()
@@ -307,7 +314,17 @@ The implementation of processing query for GamerBuddy includes following step:
                 common_asin = common_asin & set(term_asin_list[term].keys())
         return list(common_asin)
 
-  
+  #get multiplier for all the matched product based on the order of the query terms that were found in the document.
+  def _get_multipliers_for_those_containing_exact_query(asins, query):
+    print("info :: getting asin list....")
+    query = query.lower()
+    asin_list = {}
+    for asin in asins:
+        asin_list[asin] = 1
+        for key in asins[asin]:
+            if self.product_details[asin].get(key) and query in self.product_details[asin][key].lower():
+                asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
+    return asin_list
 
 ```
 
@@ -323,14 +340,15 @@ Cosine Ranking is computed in the following way.
   1. Normalise document vectors
   2. Normalise query vectors
   3. Perform dot product of both vectors(cosine value).
-  4. Sort the vectors in descending order. The higher the product value, the more relevant the document is to the query. 
+  4. Multiply the multiplier of that product with its dot product.
+  5. Sort the vectors in descending order. The higher the product value, the more relevant the document is to the query. 
 
 ##### 1. Code for normalised documents vectors is given below
 
 ~~~python
     from math import sqrt
     
-    #product_list = search result occured in step d.
+    #product_list = search result occured in step d. product_list = { "asin1" : multiplier_1, "asin2" : multiplier_2, ....}
     #query_words_list = dictionary containing all the terms as keys and their respective frequency in the query sentence as their values
 
     def generate_tf_idf_value_for_products(product_list, query_words_list):
@@ -384,7 +402,7 @@ Cosine Ranking is computed in the following way.
 
 ~~~
 
-##### 3. Code for generating dot product of documents and query
+##### 3 & 4. Code for generating dot product of documents and query and multiply the multiplier of that product with its dot product.
 
 ~~~python
 
@@ -394,6 +412,7 @@ Cosine Ranking is computed in the following way.
             temp_product = product_tf_idf[product]
             for term in query_tf_idf:
                 product_rank[product] = temp_product[term] * query_tf_idf[term]
+            product_rank[product] *= product_list[product]
         return product_rank
 
 ~~~
