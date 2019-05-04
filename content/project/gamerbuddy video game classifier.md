@@ -145,7 +145,32 @@ if __name__ == "__main__":
   
 ### c. Building the multipliers resource for the classifier. 
 
+In this step we will build prior and likelihood so that it is readily available when we are trying to classify our document. 
 
+1. Prior for a genre here is given by 
+```python
+Prior = (Number of video games that belongs to that genre) / (Total number of video games that are available in our dataset)
+```
+
+2. Likelihood here is given by 
+```python
+P(Word/genre) = (Number of occurrence of the term in all the videogame description from a genre+1) / (All the words in every videogame description from a category + Total number of unique words in all the videogame descriptions)
+```
+
+To impliment this we weill have to do the following steps.
+
+#### 1. Categorize products to genre.
+This step is to keep track of which product belongs to which genre.
+
+#### 2. Categorize terms to genre.
+Take all the terms in the descriptions of products of all genres and keep track of which genres they belong to.
+
+#### 3. Build genre term index. 
+This will keep a record how many times a term occurs in all the videogames of a given genre.
+
+#### 4. Get likelihood of terms for a genre.
+
+#### 5. Get prior for a genre.
 
 ```python
 
@@ -158,13 +183,13 @@ class GamerBuddyClassifier(object):
     def __init__(self):
         self.product_genre = json.loads(open("product_genre_new.json", "r+").read())
         self.product_terms = json.loads(
-            open("int_file.json", "r+").read())
+            open("int_file.json", "r+").read()) #file containing dictionary of products and the list of terms that are in its descriptions and title.
         self.genre_product_details = {}
         self.genre_terms_details = {}
         self.genre_term_index = {}
         self.unique_terms = set()
         self.genre_denom_val = {}
-        pass
+        
 
     def categorise_terms(self):
         self._categorize_products_to_genres()
@@ -174,6 +199,65 @@ class GamerBuddyClassifier(object):
         open("genre_term_index.json", "w+").write(json.dumps(self.genre_term_index, indent=4, sort_keys=True))
         self._get_prob_values()
         self._get_prior()
+
+    def _categorize_products_to_genres(self):
+        print("_categorize_products_to_genres")
+        self.prior = {}
+        for product in self.product_genre:
+            for genre in self.product_genre[product]:
+                if genre not in self.genre_product_details:
+                    self.genre_product_details[genre] = [product]
+                else:
+                    self.genre_product_details[genre].append(product)
+        for genre in self.genre_product_details:
+            # if len(self.genre_product_details[genre])>100:
+            print("{} :: {}".format(genre, len(self.genre_product_details[genre])))
+        open("genre_products.json", "w+").write(json.dumps(self.genre_product_details, indent=4, sort_keys=True))
+
+    def _categorize_terms_to_genres(self):
+        print("_categorize_terms_to_genres")
+        for genre in self.genre_product_details:
+            if len(self.genre_product_details[genre]) > 100:
+                self.genre_terms_details[genre] = []
+                self.prior[genre] = len(self.genre_product_details[genre])
+                for product in self.genre_product_details[genre]:
+                    for key in self.product_terms[product]:
+                        self.genre_terms_details[genre] = self.genre_terms_details[genre] + self.product_terms[product][
+                            key]
+                        self.unique_terms = self.unique_terms | set(self.product_terms[product][key])
+        self.unique_terms_len = len(self.unique_terms)
+        print(json.dumps(self.genre_terms_details, indent=4, sort_keys=True))
+
+    def _build_genre_term_index(self):
+        print("_build_genre_term_index")
+        for genre in self.genre_terms_details:
+            self.genre_term_index[genre] = {}
+            for term in self.genre_terms_details[genre]:
+                if term not in self.genre_term_index[genre]:
+                    self.genre_term_index[genre][term] = 1
+                else:
+                    self.genre_term_index[genre][term] += 1
+        print(json.dumps(self.genre_term_index, indent=4, sort_keys=True))
+
+    def _get_prob_values(self):
+        self.genre_term_prob_values = {}
+        for genre in self.genre_term_index:
+            terms_sum = sum(self.genre_term_index[genre].values())
+            self.genre_denom_val[genre] = terms_sum + self.unique_terms_len
+            self.genre_term_prob_values[genre] = {}
+            for term in self.genre_term_index[genre]:
+                print(" {} :: {}  :: {}".format(str(self.genre_term_index[genre][term] + 1), str(terms_sum),
+                                                self.unique_terms_len))
+                self.genre_term_prob_values[genre][term] = float(self.genre_term_index[genre][term] + 1) / float(
+                    terms_sum + self.unique_terms_len)
+        open("genre_probability.json", "w+").write(json.dumps(self.genre_term_prob_values, indent=4, sort_keys=True))
+        open("genre_denom_values.json", "w+").write(json.dumps(self.genre_denom_val, indent=4, sort_keys=True))
+
+    def _get_prior(self):
+        all_docs = sum(self.prior.values())
+        for genre in self.prior:
+            self.prior[genre] = float(self.prior[genre]) / all_docs
+        open("genre_prior.json", "w+").write(json.dumps(self.prior, indent=4, sort_keys=True))
 
 ```
 
