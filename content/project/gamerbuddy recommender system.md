@@ -1,6 +1,6 @@
 +++
 
-title = "GamerBuddy Search Engine"
+title = "GamerBuddy Video Game Recommender"
 
 +++
 ## **1 INTRODUCTION**
