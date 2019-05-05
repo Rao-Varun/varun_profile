@@ -92,9 +92,13 @@ To build a search engine, the following aspects need to be implemented.
   ```
   
 ###  b. Generating a cosine dot product of given description and the description of the games in collection.
-   es in the collection to get the [cosine rank](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/). The steps to implement cosine ranking system is described in implmentation of [search engine](https://varunsrao.netlify.com/project/gamerbuddy-search-engine/). Using that we will build a class that will perform cosine ranking system. We will build an object that genrates the cosine products.  
+   We need to games whose description are similar to that of the given description we need to get the [cosine rank](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/) of all the videogames. The steps to implement cosine ranking system is described in implmentation of [search engine](https://varunsrao.netlify.com/project/gamerbuddy-search-engine/). Using that we will build a class that will perform cosine ranking system. We will later create an object of that class to genrate the cosine products.  
 
 
+Note that we all so need to get term frequency of terms for every videogame and also inverse document frequency of the term in the entire videogame collections. The steps to get term frequency and inverse document frequency is explained in construction of [search engine](https://varunsrao.netlify.com/project/gamerbuddy-search-engine/)
+
+
+The class for generating cosine ranking system is given below
 ```python   
       
       from math import sqrt
@@ -208,249 +212,74 @@ class RankGenerator(object):
         return product_rank
   ```
   
+
+### c. Putting them all of them together.
+
+Now, we need to use cosine ranking object to find similarities between the given description text of a video game and that of all the videogames in our collection. But finding the similarities with all the games in the collection is time consuming and redundant. So we will only find the similarities with the games of the same genre in the collection as that of the given videogame. 
+
+to implement a recommender we will perform the follwoing steps.
+
+  1. Get input description of the games and the genres (max of 3. ex: fighting, action, adventure) the game belongs to.
+  2. Find all the games in the collection that belongs to the given genres
+  3. Find the all unique terms and the number of times the terms in occur in the given input description.
+  4. Find cosine similarities between the given descripions and that of video games of the same genre in the collection.
+  5. Find the top 5 games  that are similar to the given video game
   
-### c. Building [tf idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
-
-
-**Term frequency** of a term in a document is the ratio of number of times the term occur in that document to the total number of terms in the document. 
-
-```python
-          term_frequency(tf) of term t in document d  =  number of times t occurs in d / total number of terms in d
-```
-
-Consider a document with terms [versatile, profit, leaf, loss, stock]. tf of profit in the document is 1/5 ie 0.2 .
-
-The code for calculating tf is given below
-
-```python
-    
-    term_tf = {}
-    product_length = {}
-    product_details = {dictionary containing all the product details obatained from json, which was calculated in the first step a }
-    inverse_index = { dictionary containing all terms and its positions in documents. Obtained from step b}
-    
-    def generate_tf_for_terms_in_all_products():
-        for term in inverse_index:
-            term_tf[term] = dict()
-            for product in inverse_index[term]:
-                term_count = get_term_count_in_a_product(term, product)
-                all_term_count = get_all_term_count_in_product(product)
-                generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count)
-
-    def _get_term_count_in_a_product(term, product):
-        inv_ind_dict = inverse_index[term][product]
-        term_count = sum([len(inv_ind_dict[key]) for key in inv_ind_dict])
-        return term_count
-
-    def _get_all_term_count_in_product(product):
-        if product in product_length:
-            return product_length[product]
-        product_details = product_details[product]
-        result = sum([len(product_details[key]) for key in product_details])
-        product_length[product] = result
-        return result
-
-    def _generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count):
-        term_tf[term][product] = float(term_count) / float(all_term_count)
-
-
-```
-
-**Inverse document frequency** of a term gives us the importance of a term in the entire document collection. Inverse document frequency is calculated in the following way
-
-```python
-
-          inverse docuemt frequency of term t = 1 + log(total number of documents in the collection / number of documents that have t)
-
-```
-The following code can be executed to obtained idf
-
-```python
-
-total_number_of_product = len(product_details) #product details, a dictionary that contains the details of all products.
-term_idf = {}
-
-def generate_idf_for_terms():
-        total_len = len(inverse_index)
-        for term in inverse_index:
-            term_document_count = len(inverse_index[term].keys())
-            term_idf[term] = 1 + log(total_number_of_product / float(term_document_count))
-
-```
-
-
-We calculate tf and idf for tf-idf. tf-idf of a term in a document is the product of Term Frequency(tf) of that term in that document and inverse document frequency(idf). We will discuss this later in generating cosine product.
-
-```python
-
-          tf-idf = tf * idf
-
-```
-
-
-
-### d. Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
-
-Processing queries basically means to find the document that contain all the terms which are present in the queries. 
-So we first find list of documents for each term that contain it and then we will find all the documents that are common for all the terms.
-
-The implementation of processing query for GamerBuddy includes following step:
-  1. get all terms in in query sentence.
-  2. for each term, find all the products that contain the term.
-  3. find products that are in common for all query terms.
-  4. filter products second time based on which key[desciption, title] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
-  5. get multiplier for all the matched product based on the order of the query terms that were found in the document.
   
 ```python
+import json
 
-  #getting terms in query sentence
-  def get_query_words(self, query):
-      print("info :: splitting query sentence...")
-      return [term for term in word_tokenize(query.lower(), language="english") if
-              term not in stop_words]
+class GamerBuddyRecommender(object):
 
-  #getting process  
-  def process_query(self, query):
-    query_list = get_query_words(query)
-    term_asin_list = get_asin_from_inverted_index()
-    common_asin_list = get_common_asin_products(term_asin_list)
-    asin_list = get_asin_containing_query(common_asin_list)
-    return _get_multipliers_for_those_containing_exact_query(asin_list, query)
+    def __init__(self, product_terms, genre_products, rank_gen):
+        self.rank_gen = rank_gen
+        self.genre_products_details = genre_products
+        self.product_terms = product_terms
+        pass
 
-  #get products that contain the terms in its description or title. Each term has its own 
-  def get_asin_from_inverted_index(self):
-    term_asin_list = {}
-    for term in query_list:
-        term_asin_list[term] = inverted_index.get(term)
-    return term_asin_list
+    def recommend_games(self, product, genres):
+        recommended_games = list()
+        for genre in genres:
+            query_terms_list = self.product_terms[product].get("title", []) + self.product_terms[product].get(
+                "description", [])
+            query_terms_list = self._get_query_index(query_terms_list)
+            product_list = self.genre_products_details[genre]
+            recommended_games = recommended_games + self.rank_gen.generate_ranks_for_recommender_system(
+                query_words_list=query_terms_list, product_list=product_list)
+        recommended_games = [product_det[0] for product_det in recommended_games]
+        return self._get_top_five_recommended_products(recommended_games)
 
+    def _get_top_five_recommended_products(self, product_list):
+        count = 0
+        recommended_games = []
+        product_len = len(product_list)
+        while len(recommended_games) < 5 and count < product_len:
+            if product_list[count] not in recommended_games:
+                recommended_games.append(product_list[count])
+                count += 1
+        return recommended_games
 
-  #filter products second time based on which key[desciption, title] all the term exits. 
-  def get_common_asin_products(self, term_asin_list):
-        print("info :: getting products(asin) containing all term words...")
-        common_asin = set()
-        for term in term_asin_list:
-            if len(common_asin) == 0:
-                common_asin = set(term_asin_list[term].keys())
+    def _get_query_index(self, query_terms_list):
+        query_words_index = {}
+        for index, term in enumerate(query_terms_list, start=1):
+            if term not in query_words_index:
+                query_words_index[term] = [index]
             else:
-                common_asin = common_asin & set(term_asin_list[term].keys())
-        return list(common_asin)
+                query_words_index[term].append(index)
+        return query_words_index
 
-  #get multiplier for all the matched product based on the order of the query terms that were found in the document.
-  def _get_multipliers_for_those_containing_exact_query(asins, query):
-    print("info :: getting asin list....")
-    query = query.lower()
-    asin_list = {}
-    for asin in asins:
-        asin_list[asin] = 1
-        for key in asins[asin]:
-            if self.product_details[asin].get(key) and query in self.product_details[asin][key].lower():
-                asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
-    return asin_list
 
 ```
 
-
-
-
-### e. Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
-
-Consine Rank is used to rank the search result that we obtained in step d. We use [vector space model ](https://nlp.stanford.edu/IR-book/pdf/06vect.pdf). Each term in the document collections represents an axis in that vector space model and a document is represented as a vector. Each vectors have their terms as its components and the value of each component  is given by that terms tf-idf. Similarly queries are represented as vectors. The tf of a term in query sentence is given by the number of times that term occur in the sentence and for idf, we refer the same idf table we created for our document collects(product list)
-
-Cosine Ranking is computed in the following way. 
-
-  1. Normalise document vectors
-  2. Normalise query vectors
-  3. Perform dot product of both vectors(cosine value).
-  4. Multiply the multiplier of that product with its dot product.
-  5. Sort the vectors in descending order. The higher the product value, the more relevant the document is to the query. 
-
-##### 1. Code for normalised documents vectors is given below
-
-~~~python
-    from math import sqrt
-    
-    #product_list = search result occured in step d. product_list = { "asin1" : multiplier_1, "asin2" : multiplier_2, ....}
-    #query_words_list = dictionary containing all the terms as keys and their respective frequency in the query sentence as their values
-
-    def generate_tf_idf_value_for_products(product_list, query_words_list):
-        product_tf_idf = self._generate_tf_idf_without_normalization(product_list, query_words_list)
-        return self._nomalise_tf_idf(product_tf_idf)
-
-    def generate_tf_idf_without_normalization(product_list, query_words_list):
-        product_tf_idf = dict()
-        for asin in product_list:
-            product_tf_idf[asin] = {}
-            for term in query_words_list:
-                tf = tf_details[term][asin]
-                idf = idf_details[term]
-                product_tf_idf[asin][term] = tf * idf
-        return product_tf_idf
-
-    def nomalise_tf_idf(product_tf_idf):
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            magnitude = sqrt(sum([temp_product[term] ** 2 for term in temp_product]))
-            for term in temp_product:
-                temp_product[term] /= magnitude
-        return product_tf_idf
-
-~~~
-
-##### 2. Code for normalised documents vectors is given below
-
-~~~python
-
-    def generate_tf_idf_value_for_query(query_words_list):
-        query_tf_idf = generate_unnormalized_tf_idf_for_query(query_words_list)
-        return normalize_tf_idf_for_query(query_tf_idf)
-
-    def generate_unnormalized_tf_idf_for_query(query_words_list):
-        query_tf_idf = dict()
-        total_len = 0
-        for term in query_words_list:
-            total_len += len(query_words_list[term])
-        for term in query_words_list:
-            tf = float(sum(query_words_list[term])) / total_len
-            idf = float(self.idf_details[term])
-            query_tf_idf[term] = tf * idf
-        return query_tf_idf
-
-    def normalize_tf_idf_for_query(query_tf_idf):
-        magnitude = sqrt(sum([query_tf_idf[term] ** 2 for term in query_tf_idf]))
-        for term in query_tf_idf:
-            query_tf_idf[term] /= magnitude
-        return query_tf_idf
-
-~~~
-
-##### 3 & 4. Code for generating dot product of documents and query and multiply the multiplier of that product with its dot product.
-
-~~~python
-
-    def generate_cosine_value(product_tf_idf, query_tf_idf):
-        product_rank = dict()
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            for term in query_tf_idf:
-                product_rank[product] = temp_product[term] * query_tf_idf[term]
-            product_rank[product] *= product_list[product]
-        return product_rank
-
-~~~
-
-
-## **DEPLOYING SEARCH ENGINE**
-Search engine can deployed using flask and [ngok](https://ngrok.com/).
-An implemented search engine is available [here](http://55b4c05d.ngrok.io).
 
 
 ## **SOURCE CODE**
 The entire source code for this can be found [here](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy). 
 
 ## **REFERRENCE**
+[Tf-Idf and Cosine similarity](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/)
 
-[How to build a search engine](http://aakashjapi.com/fuckin-search-engines-how-do-they-work/)
+
 
 
 
