@@ -277,6 +277,7 @@ class GamerBuddyRecommender(object):
 The entire source code for this can be found [here](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy). 
 
 ## **REFERRENCE**
+[How to build a content-based movie recommender system with Natural Language Processing](https://towardsdatascience.com/how-to-build-from-scratch-a-content-based-movie-recommender-with-natural-language-processing-25ad400eb243)
 [Tf-Idf and Cosine similarity](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/)
 
 
