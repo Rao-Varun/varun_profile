@@ -282,439 +282,223 @@ The html code for the index page is given below
 
 ```
 
+
+
+
 #### 3. Handling queries from user.
-The server should now handle queries from the client. The python Flask code for this given below:
+The server should now handle queries from the client. Everytime a client writes a query and clicks the submit button, the query is sent to the server with the usl /display_result as a POST request. The server extracts the query from the POST request and then calls necessary function of GamerBuddy to provide a list of games that match the query. The result is then displayed to the client. The python Flask code to handle this is given below:
 
+```python 
 
+from flask import Flask, render_template, request
+from gamer_buddy import GamerBuddy
 
-  
-  2. for each term, find all the products that contain the term.
-  3. find products that are in common for all query terms.
-  4. filter products second time based on which key[desciption, title] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
-  5. get multiplier for all the matched product based on the order of the query terms that were found in the document.
-  
-```python
+app = Flask(__name__)
 
-  #getting terms in query sentence
-  def get_query_words(self, query):
-      print("info :: splitting query sentence...")
-      return [term for term in word_tokenize(query.lower(), language="english") if
-              term not in stop_words]
 
-  #getting process  
-  def process_query(self, query):
-    query_list = get_query_words(query)
-    term_asin_list = get_asin_from_inverted_index()
-    common_asin_list = get_common_asin_products(term_asin_list)
-    asin_list = get_asin_containing_query(common_asin_list)
-    return _get_multipliers_for_those_containing_exact_query(asin_list, query)
+@app.route("/")
+def index():
+    print("app info :: building index page...")
+    return render_template("index.html")
 
-  #get products that contain the terms in its description or title. Each term has its own 
-  def get_asin_from_inverted_index(self):
-    term_asin_list = {}
-    for term in query_list:
-        term_asin_list[term] = inverted_index.get(term)
-    return term_asin_list
 
+@app.before_first_request
+def setup_gamer_buddy():
+    print("app info :: Setting up gamer buddy...")
+    global gamer_buddy
+    gamer_buddy = GamerBuddy()
 
-  #filter products second time based on which key[desciption, title] all the term exits. 
-  def get_common_asin_products(self, term_asin_list):
-        print("info :: getting products(asin) containing all term words...")
-        common_asin = set()
-        for term in term_asin_list:
-            if len(common_asin) == 0:
-                common_asin = set(term_asin_list[term].keys())
-            else:
-                common_asin = common_asin & set(term_asin_list[term].keys())
-        return list(common_asin)
 
-  #get multiplier for all the matched product based on the order of the query terms that were found in the document.
-  def _get_multipliers_for_those_containing_exact_query(asins, query):
-    print("info :: getting asin list....")
-    query = query.lower()
-    asin_list = {}
-    for asin in asins:
-        asin_list[asin] = 1
-        for key in asins[asin]:
-            if self.product_details[asin].get(key) and query in self.product_details[asin][key].lower():
-                asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
-    return asin_list
-
-```
-
-For the final implementation of our search engine, we will be needing a an object of a class that does the processing of query for us. The class can be implementated in the following way
-
-
-```python
-
-import json
-from os.path import dirname, abspath, join
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
-
-class ProcessQuery(object):
-
-    def __init__(self, product_details, inverted_index):
-        self.product_details = product_details
-        self.inverted_index = inverted_index
-        self.stop_words = list(set(stopwords.words("english")))
-
-    def _load_json_from_file(self, json_file):
-        print("info :: loading inverted_index...")
-        project_loc = dirname(dirname(abspath(__file__)))
-        json_file = join(join(project_loc, "gamerbuddy_inputs"), json_file)
-        with open(json_file) as json_obj:
-            return json.load(json_obj)
-
-    def _get_query_words(self, query):
-        print("info :: splitting query sentence...")
-        return [term for term in word_tokenize(query.lower(), language="english") if
-                term not in self.stop_words]
-
-    def process_query(self, query): #main function
-        print("info :: begin processing query...")
-        self.query_list = self._get_query_words(query)
-        print("info :: query list - {}".format(str(self.query_list)))
-        term_asin_list = self._get_asin_from_inverted_index()
-        common_asin_list = self._get_common_asin_products(term_asin_list)
-        asin_list = self._get_asin_containing_query(common_asin_list)
-        return self._get_multipliers_for_those_containing_exact_query(asin_list, query)
-    #
-    def _get_asin_from_inverted_index(self):
-        print("info :: obtaining inverted index...")
-        term_asin_list = {}
-        for term in self.query_list:
-            term_asin_list[term] = self.inverted_index.get(term)
-        return term_asin_list
-
-    def _get_common_asin_products(self, term_asin_list):
-        print("info :: getting products(asin) containing all term words...")
-        common_asin = set()
-        for term in term_asin_list:
-            print("term :: {}....".format(str(term)))
-            if len(common_asin) == 0:
-                common_asin = set(term_asin_list[term].keys())
-            else:
-                common_asin = common_asin & set(term_asin_list[term].keys())
-        return list(common_asin)
-
-    def _get_asin_containing_query(self, common_asin_list):
-        print("info :: getting keys for products that common for all terms.....")
-        common_keys_for_asin = {}
-        for asin in common_asin_list:
-            for term in set(self.query_list):
-                if asin not in common_keys_for_asin:
-                    common_keys_for_asin[asin] = set(self.inverted_index[term][asin].keys())
-                else:
-                    common_keys_for_asin[asin] = common_keys_for_asin[asin] & set(
-                        self.inverted_index[term][asin].keys())
-            common_keys_for_asin[asin] = list(common_keys_for_asin[asin])
-        return common_keys_for_asin
-
-
-    def _get_multipliers_for_those_containing_exact_query(self, asins, query):
-        print("info :: getting asin list....")
-        query = query.lower()
-        asin_list = {}
-        for asin in asins:
-            asin_list[asin] = 1
-            for key in asins[asin]:
-                if self.product_details[asin].get(key) and query in self.product_details[asin][key].lower():
-                    asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
-                    print("info count :: asin {} :: {}".format(asin,
-                                                               str(self.product_details[asin].get(key).count(query))))
-            print("info :: asin {} :: {}".format(asin, str(asin_list[asin])))
-        print("asin list :: {} \n".format(str(asin_list)))
-        return asin_list
-
-```
-
-
-
-### e. Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
-
-Consine Rank is used to rank the search result that we obtained in step d. We use [vector space model ](https://nlp.stanford.edu/IR-book/pdf/06vect.pdf). Each term in the document collections represents an axis in that vector space model and a document is represented as a vector. Each vectors have their terms as its components and the value of each component  is given by that terms tf-idf. Similarly queries are represented as vectors. The tf of a term in query sentence is given by the number of times that term occur in the sentence and for idf, we refer the same idf table we created for our document collects(product list)
-
-Cosine Ranking is computed in the following way. 
-
-  1. Normalise document vectors
-  2. Normalise query vectors
-  3. Perform dot product of both vectors(cosine value).
-  4. Multiply the multiplier of that product with its dot product.
-  5. Sort the vectors in descending order. The higher the product value, the more relevant the document is to the query. 
-
-##### 1. Code for normalised documents vectors is given below
-
-~~~python
-    from math import sqrt
-    
-    #product_list = search result occured in step d. product_list = { "asin1" : multiplier_1, "asin2" : multiplier_2, ....}
-    #query_words_list = dictionary containing all the terms as keys and their respective frequency in the query sentence as their values
-
-    def generate_tf_idf_value_for_products(product_list, query_words_list):
-        product_tf_idf = self._generate_tf_idf_without_normalization(product_list, query_words_list)
-        return self._nomalise_tf_idf(product_tf_idf)
-
-    def generate_tf_idf_without_normalization(product_list, query_words_list):
-        product_tf_idf = dict()
-        for asin in product_list:
-            product_tf_idf[asin] = {}
-            for term in query_words_list:
-                tf = tf_details[term][asin]
-                idf = idf_details[term]
-                product_tf_idf[asin][term] = tf * idf
-        return product_tf_idf
-
-    def nomalise_tf_idf(product_tf_idf):
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            magnitude = sqrt(sum([temp_product[term] ** 2 for term in temp_product]))
-            for term in temp_product:
-                temp_product[term] /= magnitude
-        return product_tf_idf
-
-~~~
-
-##### 2. Code for normalised documents vectors is given below
-
-~~~python
-
-    def generate_tf_idf_value_for_query(query_words_list):
-        query_tf_idf = generate_unnormalized_tf_idf_for_query(query_words_list)
-        return normalize_tf_idf_for_query(query_tf_idf)
-
-    def generate_unnormalized_tf_idf_for_query(query_words_list):
-        query_tf_idf = dict()
-        total_len = 0
-        for term in query_words_list:
-            total_len += len(query_words_list[term])
-        for term in query_words_list:
-            tf = float(sum(query_words_list[term])) / total_len
-            idf = float(self.idf_details[term])
-            query_tf_idf[term] = tf * idf
-        return query_tf_idf
-
-    def normalize_tf_idf_for_query(query_tf_idf):
-        magnitude = sqrt(sum([query_tf_idf[term] ** 2 for term in query_tf_idf]))
-        for term in query_tf_idf:
-            query_tf_idf[term] /= magnitude
-        return query_tf_idf
-
-~~~
-
-
-##### 3 & 4. Code for generating dot product of documents and query and multiply the multiplier of that product with its dot product.
-
-~~~python
-
-    def generate_cosine_value(product_tf_idf, query_tf_idf):
-        product_rank = dict()
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            for term in query_tf_idf:
-                product_rank[product] = temp_product[term] * query_tf_idf[term]
-            product_rank[product] *= product_list[product]
-        return product_rank
-
-~~~
-
-For building our search engine we need to build an object of a class that implements all the cosine rank generating system. I have implemented it in the following way.
-
-```python
-from math import sqrt
-import json
-
-class RankGenerator(object):
-
-    def __init__(self, tf_details, idf_details):
-        self.tf_details = tf_details
-        self.idf_details = idf_details
-        self.product_list = None
-        self.query_words_list = None
-
-    def generate_ranks_for_products(self, query_words_list, product_list):
-        product_tf_idf = self._generate_tf_idf_value_for_products(product_list, query_words_list)
-        query_tf_idf = self._generate_tf_idf_value_for_query(query_words_list)
-        sorted_products = sorted(self._generate_cosine_value(product_list, product_tf_idf, query_tf_idf).items(),
-                                 key=lambda kv: kv[1], reverse=True)
-        print("sorted result :: \n{}".format(str(sorted_products)))
-        return [product_det[0] for product_det in sorted_products]
-
-    def _generate_tf_idf_value_for_products(self, product_list, query_words_list):
-        print("info :: generating tf-idf value for products...")
-        product_tf_idf = self._generate_tf_idf_without_normalization(product_list, query_words_list)
-        return self._nomalise_tf_idf(product_tf_idf)
-
-
-    def _generate_tf_idf_without_normalization(self, product_list, query_words_list):
-        print("info :: generate tf-id without normalization...")
-        product_tf_idf = dict()
-        for asin in product_list:
-            product_tf_idf[asin] = {}
-            for term in query_words_list:
-                tf = self.tf_details[term].get(asin, 0)
-                idf = self.idf_details[term]
-                product_tf_idf[asin][term] = tf * idf
-        return product_tf_idf
-
-    def _nomalise_tf_idf(self, product_tf_idf):
-        print("info :: normalise tf-idf...")
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            magnitude = sqrt(sum([temp_product[term] ** 2 for term in temp_product]))
-            if magnitude == 0:
-                continue
-            for term in temp_product:
-                temp_product[term] /= magnitude
-        print(product_tf_idf)
-        return product_tf_idf
-
-    def _generate_tf_idf_value_for_query(self, query_words_list):
-        print("info :: generating tf-idf value for query...")
-        query_tf_idf = self.generate_unnormalized_tf_idf_for_query(query_words_list)
-        return self.normalize_tf_idf_for_query(query_tf_idf)
-
-    def generate_unnormalized_tf_idf_for_query(self, query_words_list):
-        print("info :: generating unnormalised tf-idf value for query...")
-        query_tf_idf = dict()
-        total_len = 0
-        for term in query_words_list:
-            total_len += len(query_words_list[term])
-        for term in query_words_list:
-            tf = float(sum(query_words_list[term])) / total_len
-            idf = float(self.idf_details[term])
-            query_tf_idf[term] = tf * idf
-        return query_tf_idf
-
-    def normalize_tf_idf_for_query(self, query_tf_idf):
-        print("info :: generating tf-idf for query...")
-        magnitude = sqrt(sum([query_tf_idf[term] ** 2 for term in query_tf_idf]))
-        for term in query_tf_idf:
-            query_tf_idf[term] /= magnitude
-        return query_tf_idf
-
-    def _generate_cosine_value(self, product_list, product_tf_idf, query_tf_idf):
-        print("info :: generating cosine values")
-        product_rank = dict()
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            for term in query_tf_idf:
-                product_rank[product] = temp_product[term] * query_tf_idf[term]
-            product_rank[product] *= product_list[product]
-        print("info :: cosine result {}".format(str(product_rank)))
-        print(json.dumps(sorted(product_rank.items(),
-                                 key=lambda kv: kv[1], reverse=True), indent=4, sort_keys=True))
-        return product_rank
-
-    def generate_ranks_for_recommender_system(self, query_words_list, product_list):
-        product_tf_idf = self._generate_tf_idf_value_for_products(product_list, query_words_list)
-        query_tf_idf = self._generate_tf_idf_value_for_query(query_words_list)
-        sorted_products = sorted(self._generate_cosine_value_for_recommender_system(product_tf_idf, query_tf_idf).items(),
-                                 key=lambda kv: kv[1], reverse=True)
-        print("sorted result :: \n{}".format(str(sorted_products)))
-        return sorted_products
-
-
-    def _generate_cosine_value_for_recommender_system(self, product_tf_idf, query_tf_idf):
-        print("info :: generating cosine values")
-        product_rank = dict()
-        for product in product_tf_idf:
-            temp_product = product_tf_idf[product]
-            for term in query_tf_idf:
-                product_rank[product] = temp_product[term] * query_tf_idf[term]
-        print("info :: cosine result {}".format(str(product_rank)))
-        print(json.dumps(sorted(product_rank.items(),
-                                 key=lambda kv: kv[1], reverse=True), indent=4, sort_keys=True))
-        return product_rank
-
-```
-
-## **FLOW OF SEARCH ENGINE**
-The search engine we built will work in the following way:
-
-1. Get the input query from the user 
-2. Process the query and get list of documents that contain the query terms
-3. Perform cosine ranking system and find which documents are similar to the query.
-4. Return the result of cosine ranking system to the user
-
-The implementation of search engine class is given below:
-
-```python
-
-from collections import OrderedDict
-
-from input_processor.process_query import ProcessQuery
-from input_processor.rank_generator import RankGenerator
-import json
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
-
-class GamerBuddySearchEngine(object):
-
-    def __init__(self, product_details, inverted_index, rank_generator):
-        self.product_details = product_details
-        self.inverted_index = inverted_index
-        self.stop_words = list(set(stopwords.words("english")))
-        self.query_processor = ProcessQuery(product_details=self.product_details, inverted_index=self.inverted_index)
-        self.rank_generator = rank_generator
-
-    def _get_product_details(self, json_file):
-        print("info :: loading {}...".format(json_file))
-        with open(json_file) as json_obj:
-            return json.load(json_obj)
-
-    def search_product_in_dataset(self, query):
-        query_term_list = self._get_query_terms(query)
-        product_list = self.query_processor.process_query(query)
-        print("query words present in the following document {}".format(str(product_list)))
-        query_index = self._get_query_index(query_term_list)
-        result = self.rank_generator.generate_ranks_for_products(query_index, product_list)
-        # print(result)
-        return self._get_required_product_details(result)
-
-    def _get_query_index(self, query_terms_list):
-        query_words_index = {}
-        for index, term in enumerate(query_terms_list, start=1):
-            if term not in query_words_index:
-                query_words_index[term] = [index]
-            else:
-                query_words_index[term].append(index)
-        return query_words_index
-
-    def _get_query_terms(self, query):
-        print(query)
-        return [term for term in word_tokenize(query.lower(), language="english") if
-                term not in self.stop_words]
-
-    def _get_required_product_details(self, result):
-        product_result = OrderedDict()
-        for product in result:
-            product_result[product] = dict()
-            for key in ["title", "description", "imUrl"]:
-                product_result[product][key] = self.product_details[product].get(key, "{} not available".format(key))
-        return product_result
-
-
-if __name__ == "__main__":
-    product_details = open("product_details.json", "r+").read()
-    inverted_index = open("inverted_index.json", "r+").read()
-    tf_details = open("tf_details.json", "r+").read()
-    idf_details = open("idf_details.json", "r+").read()
-    rank_generator = RankGenerator(tf_details=tf_details, idf_details=idf_details)
-    se = GamerBuddySearchEngine(product_details=product_details, inverted_index=inverted_index,
-                                rank_generator=rank_generator)
-    while (True):
-        query = input("Enter query \n")
-        if query == "exit":
-            exit()
-        result = se.search_product_in_dataset(query)
-        print(result)
+@app.route("/display_result", methods=["POST"])
+def result_page():
+    print("app info :: fetching query display")
+    result = request.form["search"]
+    product_details = gamer_buddy.search_query(result)
+    return render_template("display_result.html", product_details=product_details)
 
 
 ```
 
+The html code to display the result is given below.
+
+```html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="author" content="colorlib.com">
+    <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet"/>
+    <link href="{{ url_for('static',filename='css/search_result.css') }}" rel="stylesheet"/>
+    <title>GamerBuddy</title>
+</head>
+<body>
+<div id="head">
+    <p class="logo"><a href="/"><strong>GamerBuddy</strong></a></p>
+    <form class="example" action="display_result" , method="POST">
+        <input type="text" placeholder="Search.." name="search">
+        <button type="submit"><i class="fa fa-search"></i></button>
+    </form>
+</div>
+<div>
+
+    {% for key1,product in product_details.items() %}
+        <div class="search_result">
+            <p class="img">
+                <a href="get_product?id={{ key1 }}" class = "product_link">
+                {% if product["imUrl"] == "imUrl not available" %}
+                    <img src="{{ url_for('static', 'images/missing_image.jpg') }}" alt="missing image">
+                {% else %}
+                    <img src="{{ product["imUrl"] }}" alt="missing image">
+                {% endif %}
+                </a>
+            </p>
+            <div class="result_box">
+                <p class="description">{{ product["title"] }}</p>
+            </div>
+        </div>
+
+    {% endfor %}
+
+</div>
+</body>
+</html>
+
+```
+
+#### 4. Display a game from the result list.
+
+A client can choose any of the games from the result list, presented by the server. When a client clicks a game, a GET request is sent to the user along with the id of the video game. We need to display the complete description, genre, and the image of the game. Along with this, we will also display recommended games to our clients.
+
+```python
+from flask import Flask, render_template, request
+from gamer_buddy import GamerBuddy
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def index():
+    print("app info :: building index page...")
+    return render_template("index.html")
+
+
+@app.before_first_request
+def setup_gamer_buddy():
+    print("app info :: Setting up gamer buddy...")
+    global gamer_buddy
+    gamer_buddy = GamerBuddy()
+
+
+@app.route("/display_result", methods=["POST"])
+def result_page():
+    print("app info :: fetching query display")
+    result = request.form["search"]
+    product_details = gamer_buddy.search_query(result)
+    return render_template("display_result.html", product_details=product_details)
+
+
+@app.route("/get_product", methods=["GET"])
+def get_product_details():
+    result = request.args.get("id")
+    print("app info :: fetching {} details".format(result))
+    product_details = gamer_buddy.get_product_details(result)
+    print("app info :: product {} details\n{} ".format(result, str(product_details)))
+    print("app info :: fetching recommender result...")
+    recommender_result = gamer_buddy.get_recommended_products(product_id=result,
+                                                              genre=product_details.get("genre"))
+    print("app info :: recommended products \n{}".format(str(recommender_result)))
+    return render_template("display_product.html", product_details={result: product_details}, recommender_result=recommender_result)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+        
+```
+
+The html code to display the video game details is given below
+
+```html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="author" content="colorlib.com">
+    <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet"/>
+    <link href="{{ url_for('static',filename='css/search_result.css') }}" rel="stylesheet"/>
+    <title>GamerBuddy</title>
+</head>
+<body>
+<div id="head">
+    <p class="logo"><a href="/"><strong>GamerBuddy</strong></a></p>
+    <form class="example" action="display_result" , method="POST">
+        <input type="text" placeholder="Search.." name="search">
+        <button type="submit"><i class="fa fa-search"></i></button>
+    </form>
+</div>
+<div>
+
+    {% for key1,product in product_details.items() %}
+        <div class="search_result">
+            <p class="img">
+                <a href="get_product?id={{ key1 }}" class="product_link">
+                    {% if product["imUrl"] == "imUrl not available" %}
+                        <img src="{{ url_for('static', 'images/missing_image.jpg') }}" alt="missing image">
+                    {% else %}
+                        <img src="{{ product["imUrl"] }}" alt="missing image">
+                    {% endif %}
+                </a>
+            </p>
+            <div class="result_box">
+                <p class="description"><strong>{{ product["title"] }}</strong></p>
+                </br>
+                <p class="description">
+                    <strong>Genre:</strong> {{ product["genre"][0] }}, {{ product["genre"][1] }}, {{ product["genre"][2] }}
+                </p>
+                </br>
+                <p class="description"><strong>Description</strong></br>{{ product["description"] }}</p>
+            </div>
+        </div>
+    {% endfor %}
+    <div class="search_result"><h2>  Games you may like</h2></div>
+    {% for key1,product in recommender_result.items() %}
+        <div class="search_result">
+            <p class="img">
+                <a href="get_product?id={{ key1 }}" class="product_link">
+                    {% if product["imUrl"] == "imUrl not available" %}
+                        <img src="{{ url_for('static', 'images/missing_image.jpg') }}" alt="missing image">
+                    {% else %}
+                        <img src="{{ product["imUrl"] }}" alt="missing image">
+                    {% endif %}
+                </a>
+            </p>
+            <div class="result_box">
+                <p class="description"><strong>{{ product["title"] }}</strong></p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+</body>
+</html>
+
+```
+
+
+
+## **Deploying GamerBuddy**
+I have my GamerBuddy app running on PythonAnywhere. 
+You can place your code as it is on PythonAnywhere and create a new virtual environment.
+You can find my script running on [http://varun2828.pythonanywhere.com/](http://varun2828.pythonanywhere.com/)
 
 ## **SOURCE CODE**
 The entire source code for this can be found [here](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy). 
