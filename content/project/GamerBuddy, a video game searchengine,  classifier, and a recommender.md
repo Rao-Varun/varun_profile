@@ -4,277 +4,290 @@ title = "GamerBuddy, a video game searchengine, genre classifier, and a videogam
 
 +++
 ## **1 INTRODUCTION**
-So we are gonna build a video game search engines that takes query string from user and provides a list of games that are related to the query. I named mine as GamerBuddy.
-
+GamerBuddy, a project that implements a search engine that takes query and presents related games, a classifier that predicts genres, and recommends games to you based on your interested games.
 
 ## **2 FEATURES**
 
-The Search Engine system gives a list of games based on the following attributes of users favorite games:
+GamerBuddy performs the following tasks in the following order
 
-  1. Title.
-  2. Description.
+  1. Take query from user.
+  2. Search games related to query and present it to the users.
+  2. Present description of the game, which user selected from the list of games. The classifier will instantly predict the genre based on the description of the game and present it to the user. 
+  3. Recommend similar games to user on the description page. 
   
-So that means your datasets must contain the above mentioned attributes and the queries are matched with the strings present in the above mentioned attributes of the dataset. The datasets that is used by the search engine is available [here](http://jmcauley.ucsd.edu/data/amazon/links.html). Video game meta data is used for building our search engine, GamerBuddy. Make sure you turn the files in the string to list of jsons.  
+## **3 IMPLEMENTATION** 
 
-## **3 IMPLEMENTATION**
-
-The data set contains set of json string. Each json string in meta data file represents a product.
-To build a search engine, the following aspects need to be implemented.
-  
-### a. Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
-     Turn the .zip files into list of json string using following code. Each json string contains details of a product.
-  ```python
-  
-  # generate list of json strings.
-  #op meta file=> [ {"asin" : "value", "title": "value" , "description": "value", "imUrl": "value"........ }, .....]
-  
-  def parse(path):
-    g = gzip.open(path, 'r')
-    for l in g:
-      yield json.dumps(eval(l))
-
-  if __name__ == "__main__":
-    path = input("Enter .zip path: \n")
-    final_path = path.replace(".gz", "")
-    f = open(final_path, 'w+')
-    s = []
-    for l in parse(path):
-        s .append(l)
-    f.write("[\n{}\n]".format(",\n".join(s)))
-    f.close()
-
-  ```    
-  The list of jsons in meta file will next be converted into json of format shown below.
-  
-  ```python
-  # product_details
-  
-  { 
-  "asin1": { "description": "value",
-             "title": "value",
-             "imUrl": "value",
-             .
-             .
-             .},
-  "asin2": { "description": "value",
-              "title": "value",
-              "imUrl": "value",
-              .
-              .
-              .},
-    .
-    .
-    .
-  }
-  
-  ```
-  
-  The above json can be converted to dictionary of the same form by using json.dumps(). 
-  The format change can be performed by executing the following code.
-  
-  ```python
-  
-  def split_file(file_name):
-  #file_name :: metadata file
-    #for meta file
-    product_dict = {}
-    input_file = open(file_name+".json", "r+")
-    output_file = open("product_details.json", "w+")
-    input_json = json.loads(input_file.read())
-    for product in input_json:
-        product_dict[product["asin"]] = product
-        del(product["asin"])
-    output_file.write(json.dumps(product_dict))
-    output_file.close() 
+The following steps need to be implemented
 
   
-  ```
-  
-###  b. Building a dictionary containing [inverted index](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py).
-  
-The basic idea of search engine is to see which document consists all the terms that are present in our query. We use the datastructure called [inverted index](https://en.wikipedia.org/wiki/Inverted_index). This helps us find the documents and the positions of a term in which it occurs. We make sure we avoid [stopwords](https://en.wikipedia.org/wiki/Stop_words) in our collection of terms. This decreases the size of our inverted index. You can further decrease your inverted index size by using [lemmetization and stemming](https://nlp.stanford.edu/IR-book/html/htmledition/stemming-and-lemmatization-1.html), which I have not used in my search engine. The inverted index for our document is of the following structure:
+### a. Building a search engine object to return list of games.
 
-```python   
-      
-      { 
-        "word1" : { "asin_value1" :{"description": [ 10, 40, 50, ...], "title": [15, 40, 52.....]},
-                    "asin_value1" :{"description": [ 10, 40, 50, ...], "title": [15, 40, 52.....]}, 
-                  .
-                  .
-                  .},
-        "word2": {..................},
+We need a search engine that takes query from the user and gives us a list of games that are related to the query.  
+
+The complete guide to building a gamerbuddy search engine is given [here](https://varunsrao.netlify.com/project/gamerbuddy-search-engine/). I have a given a complete details on how I've implemented it. Note that we need a class that does the job of the search engine. You can refer that link to implement your own search engine. 
+
+
+We will implement GamerBuddy as a class. We will build our GamerBuddy class to create a search engine object and call the necessary functions of the search engine object to provide us the list of games that are related to the input query. Each of the games in a result list is represented as a dictionary, containing product id as key and value as another dictionary containing image, title and description of the game.
+
+```python
+class GamerBuddy(object):
+
+    def __init__(self):
+        self.product_details = self._get_dict_from_json_files("gamerbuddy_dataset/product_details.json") #contains product details like title, description, and img link of the game
+        self.inverted_index = self._get_dict_from_json_files("input_generator/ii.json")
+        self.tf_detail = self._get_dict_from_json_files("input_generator/term_frequency.json") #term frequency
+        self.idf_details = self._get_dict_from_json_files("input_generator/inverse_document_frequency.json") #inverse document frequency
+        self.product_terms = self._get_dict_from_json_files("input_generator/int_file.json") # dictionary containing product as key and terms in the product's title and description as values
+        self.rank_generator = RankGenerator(tf_details=self.tf_detail, idf_details=self.idf_details)
+        self.search_engine = GamerBuddySearchEngine(product_details=self.product_details,
+                                                    inverted_index=self.inverted_index,
+                                                    rank_generator=self.rank_generator)
+
+    def get_gamer_buddy_search_engine(self):
+          return self.search_engine
+
+    def search_query(self, query):
+        return self.search_engine.search_product_in_dataset(query)
         
-          .
-          .
-          .
+
+    def _get_dict_from_json_files(self, json_file):
+        print("info :: loading {}...".format(json_file))
+        with open(json_file) as json_obj:
+            return json.load(json_obj)
+
+
+```
+
+Let us also implement a function in our object that takes videogame id as input and returns a dictionary containg the detail of a games such as title, image and description of that game.
+
+```python
+
+    def get_product_details(self, product_id):
+        product = {}
+        for key in ["title", "description", "imUrl"]:
+            product[key] = self.product_details[product_id].get(key, "{} not available".format(key))
+        product["genre"] = self.classify_video_games(product_id)
+        return product
         
-      }
-      
-  ```       
-  But before that we first build a list of terms for each product. That is
-  ```python
-      
-      {
-      "asin_value": { 
-                      "description": ["word1", "word2", .......],
-                      "title": ["word1", "word2", .......]
-                    },
-      "asin_value": { 
-                      "description": ["word1", "word2", .......],
-                      "title": ["word1", "word2", .......]
-                    },
-          .
-          .
-          .
-      }
-      
-  ```
-  To build the a list of terms for each product("asin") we execute the following code.
+```
+
+
   
-  ```python
-  
-  from nltk.corpus import stopwords
-  from nltk.tokenize import word_tokenize
-  
-  stop_words = list(set(stopwords.words("english")))
-  terms_in_file = {}
-  
-  def generate_all_terms_in_metadata(metadata_dict):
-        for product in metadata_dict:
-            terms_in_file[product] = _get_terms_in_json(metadata_dict[product])
-  
-  
-  def _get_terms_in_json(json_dict, key_list):
-        json_to_terms = {}
-        for key in json_dict:
-            json_to_terms[key] = [term for term in word_tokenize(json_dict[key].lower(), language="english") if
-                                  term not in stop_words]
-        return json_to_terms
+### b. Building a genre classifier to classify games. 
+Once we select a game from the list of games, we will build a genre classifier that takes description of the game as input and predict the genre of the game.
+
+The complete guide on building our GamerBuddy classifier is given [here](https://varunsrao.netlify.com/project/gamerbuddy-video-game-classifier/). You can use this as a referrence to build your classifier class.
+
+Now, we need to create a class that creates an object of the classifier class. We will also need to implement the function 
+that calls the necessary function of the classifier object that can tell us which genre a given game belongs to.
+
+```python
+
+class GamerBuddy(object):
+
+    def __init__(self):
+        self.product_details = self._get_dict_from_json_files("gamerbuddy_dataset/product_details.json")
+        self.inverted_index = self._get_dict_from_json_files("input_generator/ii.json")
+        self.tf_detail = self._get_dict_from_json_files("input_generator/term_frequency.json")
+        self.idf_details = self._get_dict_from_json_files("input_generator/inverse_document_frequency.json")
+        self.product_terms = self._get_dict_from_json_files("input_generator/int_file.json")
+        self.genre_products_details = self._get_dict_from_json_files("recommender_data/genre_products.json")
+        self.rank_generator = RankGenerator(tf_details=self.tf_detail, idf_details=self.idf_details)
+        self.search_engine = GamerBuddySearchEngine(product_details=self.product_details,
+                                                    inverted_index=self.inverted_index,
+                                                    rank_generator=self.rank_generator)
+        self.classifier = GamerBuddyClassifier()
         
-  ```
+    def get_gamer_buddy_search_engine(self):
+        return self.search_engine
+
+    def search_query(self, query):
+        return self.search_engine.search_product_in_dataset(query)
+
+    def get_product_details(self, product_id):
+        product = {}
+        for key in ["title", "description", "imUrl"]:
+            product[key] = self.product_details[product_id].get(key, "{} not available".format(key))
+        product["genre"] = self.classify_video_games(product_id)
+        return product
+
+    def get_gamer_buddy_classifier(self):
+        return self.classifier
+
+    def classify_video_games(self, product_id):
+        return self.classifier.predict_product_genre(
+            self.product_terms[product_id].get("title", []) + self.product_terms[product_id].get("description", []))
+
+    def _get_dict_from_json_files(self, json_file):
+        print("info :: loading {}...".format(json_file))
+        with open(json_file) as json_obj:
+            return json.load(json_obj)
+
+
+```
   
-  Now to convert a list a terms in documents to inverted index we execute the following code.
+### c. Building a recommender object to recommend games.
+We've come to the third aspect of GamerBuddy. We build a recommender object in this section. The complete guide to building a recommender is given [here](https://varunsrao.netlify.com/project/gamerbuddy-recommender-system/). Our recommender object is used take the description and the genre of that game as input and find games that are similar to it. 
+
+We will use this object in our GamerBuddy class in the following way.
+
+
+```python
+
+import copy
+import json
+from classifier import GamerBuddyClassifier
+from recommender import GamerBuddyRecommender
+from search_engine import GamerBuddySearchEngine
+from input_processor.rank_generator import RankGenerator
+
+
+class GamerBuddy(object):
+
+    def __init__(self):
+        self.product_details = self._get_dict_from_json_files("gamerbuddy_dataset/product_details.json")
+        self.inverted_index = self._get_dict_from_json_files("input_generator/ii.json")
+        self.tf_detail = self._get_dict_from_json_files("input_generator/term_frequency.json")
+        self.idf_details = self._get_dict_from_json_files("input_generator/inverse_document_frequency.json")
+        self.product_terms = self._get_dict_from_json_files("input_generator/int_file.json")
+        self.genre_products_details = self._get_dict_from_json_files("recommender_data/genre_products.json")
+        self.rank_generator = RankGenerator(tf_details=self.tf_detail, idf_details=self.idf_details)
+        self.search_engine = GamerBuddySearchEngine(product_details=self.product_details,
+                                                    inverted_index=self.inverted_index,
+                                                    rank_generator=self.rank_generator)
+        self.classifier = GamerBuddyClassifier()
+        self.recommender = GamerBuddyRecommender(product_terms=self.product_terms,
+                                                 genre_products=self.genre_products_details,
+                                                 rank_gen=self.rank_generator)
+
+    def get_gamer_buddy_search_engine(self):
+        return self.search_engine
+
+    def search_query(self, query):
+        return self.search_engine.search_product_in_dataset(query)
+
+    def get_product_details(self, product_id):
+        product = {}
+        for key in ["title", "description", "imUrl"]:
+            product[key] = self.product_details[product_id].get(key, "{} not available".format(key))
+        product["genre"] = self.classify_video_games(product_id)
+        return product
+
+    def get_gamer_buddy_classifier(self):
+        return self.classifier
+
+    def classify_video_games(self, product_id):
+        return self.classifier.predict_product_genre(
+            self.product_terms[product_id].get("title", []) + self.product_terms[product_id].get("description", []))
+
+    def get_gamer_buddy_recommender_system(self):
+        return self.recommender
+
+    def get_recommended_products(self, product_id, genre):
+        recommended_poducts_id = self.recommender.recommend_games(product_id, genre)
+        recommended_poducts = {}
+        for product_id in recommended_poducts_id:
+            recommended_poducts[product_id] = {}
+            for key in ["title", "description", "imUrl"]:
+                recommended_poducts[product_id][key] = self.product_details[product_id].get(key, "{} not available".format(key))
+        return recommended_poducts
+
+    def _get_dict_from_json_files(self, json_file):
+        print("info :: loading {}...".format(json_file))
+        with open(json_file) as json_obj:
+            return json.load(json_obj)
+
+
+```
+
+
+### d. Creating a GamerBuddy Server.
+
+We will use FLASK to write a script that will take requests from client and provide response back to it. The server script will have to handle the following scenarios. 
+#### 1. Keeping GamerBuddy ready.
+Before the server script takes any request, we will have to create an instance of our GamerBuddy class. The GamerBuddy object will create an instance of our search engine, classifier and recommender classes. 
+
+```python
+
+from flask import Flask, render_template, request
+from gamer_buddy import GamerBuddy
+
+app = Flask(__name__)
+
+@app.before_first_request
+def setup_gamer_buddy():
+    print("app info :: Setting up gamer buddy...")
+    global gamer_buddy
+    gamer_buddy = GamerBuddy()
+
+```
+
+#### 2. Displaying the index page.
+Once the server is ready with the GamerBuddy object, the server should display the index page of our search engine.
+
+```python
+
+from flask import Flask, render_template, request
+from gamer_buddy import GamerBuddy
+
+app = Flask(__name__)
+
+@app.before_first_request
+def setup_gamer_buddy():
+    print("app info :: Setting up gamer buddy...")
+    global gamer_buddy
+    gamer_buddy = GamerBuddy()
+
+@app.route("/")
+def index(): #index page.
+    print("app info :: building index page...")
+    return render_template("index.html")
+
+```
+
+The html code for the index page is given below 
+
+```html
+
+<html>
+  <head>
+    <title>GamerBuddy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="author" content="colorlib.com">
+    <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
+    <link href="{{ url_for('static',filename='css/main.css') }}" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="s01">
+      <form name="query" action="display_result", method="POST">
+        <fieldset>
+          <legend id="logo" align="center">GamerBuddy</legend>
+        </fieldset>
+        <div class="inner-form">
+          <div class="input-field first-wrap">
+            <input id="search" name="search" type="text" placeholder="What are you looking for?" />
+          </div>
+          <div class="input-field third-wrap">
+            <button class="btn-search" type="submit" value="Search"><i class="fa fa-search"></i></button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
+
+
+```
+
+#### 3. Handling queries from user.
+The server should now handle queries from the client. The python Flask code for this given below:
+
+
+
   
-  ```python
-   
-   inverted_index = {}
-   
-   def generate_position_of_terms_in_input_json():
-        for count, asin in enumerate(terms_in_file, start=1):
-                product_term_collections[asin] = _find_all_term_position_for_a_product(terms_in_file[asin])
-                _update_term_positions_dictionary(asin, product_term_collections)
-                
-   def  _find_all_term_position_for_a_product(product_term_collection):
-        term_position = {}
-        for key in product_term_collection:
-            for index, term in enumerate(product_term_collection[key]):
-                if not term in term_position:
-                    term_position[term] = {}
-                if not key in term_position[term]:
-                    term_position[term][key] = []
-                term_position[term][key].append(index)
-        return term_position 
-   
-   def _update_term_positions_dictionary(asin, term_collection):
-        for term in term_collection:
-            if not term in term_position:
-                inverted_index[term] = {}
-            if not asin in self.term_position[term]:
-                inverted_index[term][asin] = {}
-            for key in term_collection[term]:
-                inverted_index[term][asin][key] = term_collection[term][key]
-
-  ```
-  
-  
-### c. Building [tf idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
-
-
-**Term frequency** of a term in a document is the ratio of number of times the term occur in that document to the total number of terms in the document. 
-
-```python
-          term_frequency(tf) of term t in document d  =  number of times t occurs in d / total number of terms in d
-```
-
-Consider a document with terms [versatile, profit, leaf, loss, stock]. tf of profit in the document is 1/5 ie 0.2 .
-
-The code for calculating tf is given below
-
-```python
-    
-    term_tf = {}
-    product_length = {}
-    product_details = {dictionary containing all the product details obatained from json, which was calculated in the first step a }
-    inverse_index = { dictionary containing all terms and its positions in documents. Obtained from step b}
-    
-    def generate_tf_for_terms_in_all_products():
-        for term in inverse_index:
-            term_tf[term] = dict()
-            for product in inverse_index[term]:
-                term_count = get_term_count_in_a_product(term, product)
-                all_term_count = get_all_term_count_in_product(product)
-                generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count)
-
-    def _get_term_count_in_a_product(term, product):
-        inv_ind_dict = inverse_index[term][product]
-        term_count = sum([len(inv_ind_dict[key]) for key in inv_ind_dict])
-        return term_count
-
-    def _get_all_term_count_in_product(product):
-        if product in product_length:
-            return product_length[product]
-        product_details = product_details[product]
-        result = sum([len(product_details[key]) for key in product_details])
-        product_length[product] = result
-        return result
-
-    def _generate_tf_value_of_a_term_for_a_product(term, product, term_count, all_term_count):
-        term_tf[term][product] = float(term_count) / float(all_term_count)
-
-
-```
-
-**Inverse document frequency** of a term gives us the importance of a term in the entire document collection. Inverse document frequency is calculated in the following way
-
-```python
-
-          inverse docuemt frequency of term t = 1 + log(total number of documents in the collection / number of documents that have t)
-
-```
-The following code can be executed to obtained idf
-
-```python
-
-total_number_of_product = len(product_details) #product details, a dictionary that contains the details of all products.
-term_idf = {}
-
-def generate_idf_for_terms():
-        total_len = len(inverse_index)
-        for term in inverse_index:
-            term_document_count = len(inverse_index[term].keys())
-            term_idf[term] = 1 + log(total_number_of_product / float(term_document_count))
-
-```
-
-
-We calculate tf and idf for tf-idf. tf-idf of a term in a document is the product of Term Frequency(tf) of that term in that document and inverse document frequency(idf). We will discuss this later in generating cosine product.
-
-```python
-
-          tf-idf = tf * idf
-
-```
-
-
-
-### d. Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
-
-Processing queries basically means to find the document that contain all the terms which are present in the queries. 
-So we first find list of documents for each term that contain it and then we will find all the documents that are common for all the terms.
-
-The implementation of processing query for GamerBuddy includes following step:
-
-  1. get all terms in in query sentence.  
   2. for each term, find all the products that contain the term.
   3. find products that are in common for all query terms.
   4. filter products second time based on which key[desciption, title] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
