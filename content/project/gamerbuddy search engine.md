@@ -326,8 +326,94 @@ The implementation of processing query for GamerBuddy includes following step:
                 asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
     return asin_list
 
-```
 
+For the final implementation of our search engine, we will be needing a an object of a class that does the processing of query for us. The class can be implementated in the following way
+
+
+```python
+
+import json
+from os.path import dirname, abspath, join
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+
+class ProcessQuery(object):
+
+    def __init__(self, product_details, inverted_index):
+        self.product_details = product_details
+        self.inverted_index = inverted_index
+        self.stop_words = list(set(stopwords.words("english")))
+
+    def _load_json_from_file(self, json_file):
+        print("info :: loading inverted_index...")
+        project_loc = dirname(dirname(abspath(__file__)))
+        json_file = join(join(project_loc, "gamerbuddy_inputs"), json_file)
+        with open(json_file) as json_obj:
+            return json.load(json_obj)
+
+    def _get_query_words(self, query):
+        print("info :: splitting query sentence...")
+        return [term for term in word_tokenize(query.lower(), language="english") if
+                term not in self.stop_words]
+
+    def process_query(self, query): #main function
+        print("info :: begin processing query...")
+        self.query_list = self._get_query_words(query)
+        print("info :: query list - {}".format(str(self.query_list)))
+        term_asin_list = self._get_asin_from_inverted_index()
+        common_asin_list = self._get_common_asin_products(term_asin_list)
+        asin_list = self._get_asin_containing_query(common_asin_list)
+        return self._get_multipliers_for_those_containing_exact_query(asin_list, query)
+    #
+    def _get_asin_from_inverted_index(self):
+        print("info :: obtaining inverted index...")
+        term_asin_list = {}
+        for term in self.query_list:
+            term_asin_list[term] = self.inverted_index.get(term)
+        return term_asin_list
+
+    def _get_common_asin_products(self, term_asin_list):
+        print("info :: getting products(asin) containing all term words...")
+        common_asin = set()
+        for term in term_asin_list:
+            print("term :: {}....".format(str(term)))
+            if len(common_asin) == 0:
+                common_asin = set(term_asin_list[term].keys())
+            else:
+                common_asin = common_asin & set(term_asin_list[term].keys())
+        return list(common_asin)
+
+    def _get_asin_containing_query(self, common_asin_list):
+        print("info :: getting keys for products that common for all terms.....")
+        common_keys_for_asin = {}
+        for asin in common_asin_list:
+            for term in set(self.query_list):
+                if asin not in common_keys_for_asin:
+                    common_keys_for_asin[asin] = set(self.inverted_index[term][asin].keys())
+                else:
+                    common_keys_for_asin[asin] = common_keys_for_asin[asin] & set(
+                        self.inverted_index[term][asin].keys())
+            common_keys_for_asin[asin] = list(common_keys_for_asin[asin])
+        return common_keys_for_asin
+
+
+    def _get_multipliers_for_those_containing_exact_query(self, asins, query):
+        print("info :: getting asin list....")
+        query = query.lower()
+        asin_list = {}
+        for asin in asins:
+            asin_list[asin] = 1
+            for key in asins[asin]:
+                if self.product_details[asin].get(key) and query in self.product_details[asin][key].lower():
+                    asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
+                    print("info count :: asin {} :: {}".format(asin,
+                                                               str(self.product_details[asin].get(key).count(query))))
+            print("info :: asin {} :: {}".format(asin, str(asin_list[asin])))
+        print("asin list :: {} \n".format(str(asin_list)))
+        return asin_list
+
+```
 
 
 
@@ -402,6 +488,7 @@ Cosine Ranking is computed in the following way.
 
 ~~~
 
+
 ##### 3 & 4. Code for generating dot product of documents and query and multiply the multiplier of that product with its dot product.
 
 ~~~python
@@ -417,10 +504,201 @@ Cosine Ranking is computed in the following way.
 
 ~~~
 
+For building our search engine we need to build an object of a class that implements all the cosine rank generating system. I have implemented it in the following way.
 
-## **DEPLOYING SEARCH ENGINE**
-Search engine can deployed using flask and [ngok](https://ngrok.com/).
-An implemented search engine is available [here](http://55b4c05d.ngrok.io).
+```python
+from math import sqrt
+import json
+
+class RankGenerator(object):
+
+    def __init__(self, tf_details, idf_details):
+        self.tf_details = tf_details
+        self.idf_details = idf_details
+        self.product_list = None
+        self.query_words_list = None
+
+    def generate_ranks_for_products(self, query_words_list, product_list):
+        product_tf_idf = self._generate_tf_idf_value_for_products(product_list, query_words_list)
+        query_tf_idf = self._generate_tf_idf_value_for_query(query_words_list)
+        sorted_products = sorted(self._generate_cosine_value(product_list, product_tf_idf, query_tf_idf).items(),
+                                 key=lambda kv: kv[1], reverse=True)
+        print("sorted result :: \n{}".format(str(sorted_products)))
+        return [product_det[0] for product_det in sorted_products]
+
+    def _generate_tf_idf_value_for_products(self, product_list, query_words_list):
+        print("info :: generating tf-idf value for products...")
+        product_tf_idf = self._generate_tf_idf_without_normalization(product_list, query_words_list)
+        return self._nomalise_tf_idf(product_tf_idf)
+
+
+    def _generate_tf_idf_without_normalization(self, product_list, query_words_list):
+        print("info :: generate tf-id without normalization...")
+        product_tf_idf = dict()
+        for asin in product_list:
+            product_tf_idf[asin] = {}
+            for term in query_words_list:
+                tf = self.tf_details[term].get(asin, 0)
+                idf = self.idf_details[term]
+                product_tf_idf[asin][term] = tf * idf
+        return product_tf_idf
+
+    def _nomalise_tf_idf(self, product_tf_idf):
+        print("info :: normalise tf-idf...")
+        for product in product_tf_idf:
+            temp_product = product_tf_idf[product]
+            magnitude = sqrt(sum([temp_product[term] ** 2 for term in temp_product]))
+            if magnitude == 0:
+                continue
+            for term in temp_product:
+                temp_product[term] /= magnitude
+        print(product_tf_idf)
+        return product_tf_idf
+
+    def _generate_tf_idf_value_for_query(self, query_words_list):
+        print("info :: generating tf-idf value for query...")
+        query_tf_idf = self.generate_unnormalized_tf_idf_for_query(query_words_list)
+        return self.normalize_tf_idf_for_query(query_tf_idf)
+
+    def generate_unnormalized_tf_idf_for_query(self, query_words_list):
+        print("info :: generating unnormalised tf-idf value for query...")
+        query_tf_idf = dict()
+        total_len = 0
+        for term in query_words_list:
+            total_len += len(query_words_list[term])
+        for term in query_words_list:
+            tf = float(sum(query_words_list[term])) / total_len
+            idf = float(self.idf_details[term])
+            query_tf_idf[term] = tf * idf
+        return query_tf_idf
+
+    def normalize_tf_idf_for_query(self, query_tf_idf):
+        print("info :: generating tf-idf for query...")
+        magnitude = sqrt(sum([query_tf_idf[term] ** 2 for term in query_tf_idf]))
+        for term in query_tf_idf:
+            query_tf_idf[term] /= magnitude
+        return query_tf_idf
+
+    def _generate_cosine_value(self, product_list, product_tf_idf, query_tf_idf):
+        print("info :: generating cosine values")
+        product_rank = dict()
+        for product in product_tf_idf:
+            temp_product = product_tf_idf[product]
+            for term in query_tf_idf:
+                product_rank[product] = temp_product[term] * query_tf_idf[term]
+            product_rank[product] *= product_list[product]
+        print("info :: cosine result {}".format(str(product_rank)))
+        print(json.dumps(sorted(product_rank.items(),
+                                 key=lambda kv: kv[1], reverse=True), indent=4, sort_keys=True))
+        return product_rank
+
+    def generate_ranks_for_recommender_system(self, query_words_list, product_list):
+        product_tf_idf = self._generate_tf_idf_value_for_products(product_list, query_words_list)
+        query_tf_idf = self._generate_tf_idf_value_for_query(query_words_list)
+        sorted_products = sorted(self._generate_cosine_value_for_recommender_system(product_tf_idf, query_tf_idf).items(),
+                                 key=lambda kv: kv[1], reverse=True)
+        print("sorted result :: \n{}".format(str(sorted_products)))
+        return sorted_products
+
+
+    def _generate_cosine_value_for_recommender_system(self, product_tf_idf, query_tf_idf):
+        print("info :: generating cosine values")
+        product_rank = dict()
+        for product in product_tf_idf:
+            temp_product = product_tf_idf[product]
+            for term in query_tf_idf:
+                product_rank[product] = temp_product[term] * query_tf_idf[term]
+        print("info :: cosine result {}".format(str(product_rank)))
+        print(json.dumps(sorted(product_rank.items(),
+                                 key=lambda kv: kv[1], reverse=True), indent=4, sort_keys=True))
+        return product_rank
+
+```
+
+## **FLOW OF SEARCH ENGINE**
+The search engine we built will work in the following way:
+
+1. Get the input query from the user 
+2. Process the query and get list of documents that contain the query terms
+3. Perform cosine ranking system and find which documents are similar to the query.
+4. Return the result of cosine ranking system to the user
+
+The implementation of search engine class is given below:
+
+```python
+
+from collections import OrderedDict
+
+from input_processor.process_query import ProcessQuery
+from input_processor.rank_generator import RankGenerator
+import json
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+
+class GamerBuddySearchEngine(object):
+
+    def __init__(self, product_details, inverted_index, rank_generator):
+        self.product_details = product_details
+        self.inverted_index = inverted_index
+        self.stop_words = list(set(stopwords.words("english")))
+        self.query_processor = ProcessQuery(product_details=self.product_details, inverted_index=self.inverted_index)
+        self.rank_generator = rank_generator
+
+    def _get_product_details(self, json_file):
+        print("info :: loading {}...".format(json_file))
+        with open(json_file) as json_obj:
+            return json.load(json_obj)
+
+    def search_product_in_dataset(self, query):
+        query_term_list = self._get_query_terms(query)
+        product_list = self.query_processor.process_query(query)
+        print("query words present in the following document {}".format(str(product_list)))
+        query_index = self._get_query_index(query_term_list)
+        result = self.rank_generator.generate_ranks_for_products(query_index, product_list)
+        # print(result)
+        return self._get_required_product_details(result)
+
+    def _get_query_index(self, query_terms_list):
+        query_words_index = {}
+        for index, term in enumerate(query_terms_list, start=1):
+            if term not in query_words_index:
+                query_words_index[term] = [index]
+            else:
+                query_words_index[term].append(index)
+        return query_words_index
+
+    def _get_query_terms(self, query):
+        print(query)
+        return [term for term in word_tokenize(query.lower(), language="english") if
+                term not in self.stop_words]
+
+    def _get_required_product_details(self, result):
+        product_result = OrderedDict()
+        for product in result:
+            product_result[product] = dict()
+            for key in ["title", "description", "imUrl"]:
+                product_result[product][key] = self.product_details[product].get(key, "{} not available".format(key))
+        return product_result
+
+
+if __name__ == "__main__":
+    product_details = open("product_details.json", "r+").read()
+    inverted_index = open("inverted_index.json", "r+").read()
+    tf_details = open("tf_details.json", "r+").read()
+    idf_details = open("idf_details.json", "r+").read()
+    rank_generator = RankGenerator(tf_details=tf_details, idf_details=idf_details)
+    se = GamerBuddySearchEngine(product_details=product_details, inverted_index=inverted_index,
+                                rank_generator=rank_generator)
+    while (True):
+        query = input("Enter query \n")
+        if query == "exit":
+            exit()
+        result = se.search_product_in_dataset(query)
+        print(result)
+
+
+```
 
 
 ## **SOURCE CODE**
