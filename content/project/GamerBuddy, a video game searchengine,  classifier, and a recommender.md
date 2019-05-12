@@ -282,6 +282,11 @@ The html code for the index page is given below
 
 ```
 
+The index screen for the one i built looks like this
+
+
+![index page](/img/index.png)
+
 
 
 
@@ -368,6 +373,11 @@ The html code to display the result is given below.
 </html>
 
 ```
+
+The page that I built to displays result looks like this
+
+![Result list screen](/img/result_list.png)
+
 
 #### 4. Display a game from the result list.
 
@@ -492,6 +502,10 @@ The html code to display the video game details is given below
 </html>
 
 ```
+
+The page that I Built to display the product details looks like this
+
+![Product description screen](/img/product_description.png)
 
 
 
