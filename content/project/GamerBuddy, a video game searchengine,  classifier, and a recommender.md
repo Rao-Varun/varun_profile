@@ -1,6 +1,6 @@
 +++
 
-title = "GamerBuddy Search Engine"
+title = "GamerBuddy, a video game searchengine, genre classifier, and a videogame recommender"
 
 +++
 ## **1 INTRODUCTION**
