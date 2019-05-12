@@ -501,7 +501,7 @@ You can place your code as it is on PythonAnywhere and create a new virtual envi
 You can find my script running on [http://varun2828.pythonanywhere.com/](http://varun2828.pythonanywhere.com/)
 
 ## **SOURCE CODE**
-The entire source code for this can be found [here](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy). 
+The entire source code for this can be found [here](https://github.com/Rao-Varun/gamerbuddy). 
 
 ## **REFERRENCE**
 
