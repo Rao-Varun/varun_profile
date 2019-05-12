@@ -707,8 +707,10 @@ The entire source code for this can be found [here](https://github.com/Rao-Varun
 ## **REFERRENCE**
 
 [How to build a search engine](http://aakashjapi.com/fuckin-search-engines-how-do-they-work/)
-
-
+[Amazon product data](http://jmcauley.ucsd.edu/data/amazon/links.html)
+[inverted index](https://en.wikipedia.org/wiki/Inverted_index)
+[tf-idf and cosine similariry](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/)
+[Scoring, term weighting and the vector space model](https://nlp.stanford.edu/IR-book/pdf/06vect.pdf)
 
 
 
