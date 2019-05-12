@@ -273,7 +273,8 @@ Processing queries basically means to find the document that contain all the ter
 So we first find list of documents for each term that contain it and then we will find all the documents that are common for all the terms.
 
 The implementation of processing query for GamerBuddy includes following step:
-  1. get all terms in in query sentence.
+
+  1. get all terms in in query sentence.  
   2. for each term, find all the products that contain the term.
   3. find products that are in common for all query terms.
   4. filter products second time based on which key[desciption, title] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
