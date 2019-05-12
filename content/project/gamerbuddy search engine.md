@@ -327,6 +327,7 @@ The implementation of processing query for GamerBuddy includes following step:
                 asin_list[asin] *= 10 ** (2*self.product_details[asin].get(key).lower().count(query))
     return asin_list
 
+```
 
 For the final implementation of our search engine, we will be needing a an object of a class that does the processing of query for us. The class can be implementated in the following way
 
