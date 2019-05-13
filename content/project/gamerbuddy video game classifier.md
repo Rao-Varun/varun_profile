@@ -348,6 +348,11 @@ if __name__ == "__main__":
 ## **SOURCE CODE**
 The entire source code for this can be found [here](https://github.com/Rao-Varun/gamerbuddy). 
 
+## **WORKING CLASSIFIER**
+I have my GamerBuddy app running on PythonAnywhere. 
+GamerBuddy has a classifier running in the app. To know more about GamerBuddy click [here](https://varunsrao.netlify.com/project/gamerbuddy-a-video-game-searchengine-classifier-and-a-recommender/)
+You can find my script running on [http://varun2828.pythonanywhere.com/](http://varun2828.pythonanywhere.com/)
+
 ## **REFERRENCE**
 
 
