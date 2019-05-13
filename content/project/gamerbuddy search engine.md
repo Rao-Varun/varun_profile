@@ -21,7 +21,7 @@ So that means your datasets must contain the above mentioned attributes and the 
 The data set contains set of json string. Each json string in meta data file represents a product.
 To build a search engine, the following aspects need to be implemented.
   
-### a. Processing your [dataset](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy/gamerbuddy_dataset). 
+### a. Processing your dataset
      Turn the .zip files into list of json string using following code. Each json string contains details of a product.
   ```python
   
@@ -90,7 +90,7 @@ To build a search engine, the following aspects need to be implemented.
   
   ```
   
-###  b. Building a dictionary containing [inverted index](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py).
+###  b. Building a dictionary containing inverted index
   
 The basic idea of search engine is to see which document consists all the terms that are present in our query. We use the datastructure called [inverted index](https://en.wikipedia.org/wiki/Inverted_index). This helps us find the documents and the positions of a term in which it occurs. We make sure we avoid [stopwords](https://en.wikipedia.org/wiki/Stop_words) in our collection of terms. This decreases the size of our inverted index. You can further decrease your inverted index size by using [lemmetization and stemming](https://nlp.stanford.edu/IR-book/html/htmledition/stemming-and-lemmatization-1.html), which I have not used in my search engine. The inverted index for our document is of the following structure:
 
@@ -187,7 +187,7 @@ The basic idea of search engine is to see which document consists all the terms 
   ```
   
   
-### c. Building [tf idf](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_generator/input_generator.py) for all the terms in inverse index.
+### c. Building tf idf for all the terms in inverse index.
 
 
 **Term frequency** of a term in a document is the ratio of number of times the term occur in that document to the total number of terms in the document. 
@@ -267,7 +267,7 @@ We calculate tf and idf for tf-idf. tf-idf of a term in a document is the produc
 
 
 
-### d. Process [queries](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/process_query.py) and get products that contain the query terms.
+### d. Process queries and get products that contain the query terms.
 
 Processing queries basically means to find the document that contain all the terms which are present in the queries. 
 So we first find list of documents for each term that contain it and then we will find all the documents that are common for all the terms.
@@ -279,6 +279,15 @@ The implementation of processing query for GamerBuddy includes following step:
   3. find products that are in common for all query terms.
   4. filter products second time based on which key[desciption, title] the term exits. If a product contains all the query terms then those terms should exist in the same key. 
   5. get multiplier for all the matched product based on the order of the query terms that were found in the document.
+  
+  Here the multiplier is given by the 
+  
+  ```python
+  
+  multiplier = 10 ^ (number of times the query occurs as it is in the document)
+  
+  ```
+  The implementation can be done in the following way.
   
 ```python
 
