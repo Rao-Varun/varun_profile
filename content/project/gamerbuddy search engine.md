@@ -22,7 +22,8 @@ The data set contains set of json string. Each json string in meta data file rep
 To build a search engine, the following aspects need to be implemented.
   
 ### a. Processing your dataset
-     Turn the .zip files into list of json string using following code. Each json string contains details of a product.
+Turn the .zip files into list of json string using following code. Each json string contains details of a product.
+  
   ```python
   
   # generate list of json strings.
@@ -112,6 +113,7 @@ The basic idea of search engine is to see which document consists all the terms 
       
   ```       
   But before that we first build a list of terms for each product. That is
+  
   ```python
       
       {
@@ -428,7 +430,7 @@ class ProcessQuery(object):
 
 
 
-### e. Generate [cosine rank](https://github.com/Rao-Varun/varun_repo/blob/master/gamerbuddy/input_processor/rank_generator.py) between query term and product document. 
+### e. Generate cosine rank between query term and product document. 
 
 Consine Rank is used to rank the search result that we obtained in step d. We use [vector space model ](https://nlp.stanford.edu/IR-book/pdf/06vect.pdf). Each term in the document collections represents an axis in that vector space model and a document is represented as a vector. Each vectors have their terms as its components and the value of each component  is given by that terms tf-idf. Similarly queries are represented as vectors. The tf of a term in query sentence is given by the number of times that term occur in the sentence and for idf, we refer the same idf table we created for our document collects(product list)
 
