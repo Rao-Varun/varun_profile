@@ -715,7 +715,7 @@ if __name__ == "__main__":
 
 
 ## **SOURCE CODE**
-The entire source code for this can be found [here](https://github.com/Rao-Varun/varun_repo/tree/master/gamerbuddy). 
+The entire source code for this can be found [here](https://github.com/Rao-Varun/gamerbuddy). 
 
 ## **REFERRENCE**
 
